@@ -15,6 +15,7 @@
 #define BUFFER_SIZE 1024
 
 #define DEBUG_ON 0
+#define PRT_IN_OUT 1
 
 #define MAP_SIDE    10
 #define yTOP        3
@@ -60,6 +61,7 @@ static int score_opponent = 0;
 
 static int nb_boats = 5;
 static int boats_size[5] = {5, 4, 3, 3, 2};
+static int hits_per_boat[5] = {0, 0, 0, 0, 0};
 
 char msg[32];
 
@@ -110,6 +112,7 @@ int max(int a, int b){
 
 
 int main(int argc, char **argv) {
+    anim_boat_sinking(1);
     signal(SIGINT, signal_handler);
     
     if (check_args(argc, argv) != 0){
@@ -182,9 +185,12 @@ void *thread_receive(void *arg) {
             break;
         }
 
-        // mvCursor(60, 6);
-        // printf("Received: %s         ", buffer);
-        // resetCursor();
+#if PRT_IN_OUT == 1
+        mvCursor(60, 6);
+        printf("Received: %s         ", buffer);
+        resetCursor();
+#endif
+
         int len = strlen(buffer);
         int pos = 0;
 
@@ -192,11 +198,6 @@ void *thread_receive(void *arg) {
             if (buffer[pos] == 'S'){
                 current_player = buffer[pos + 1] - '0';
                 mvCursor(5, 51);
-                // if (current_player == self_player){
-                //     printf("You start!");
-                // } else {
-                //     printf("Opponent starts!");
-                // }
                 update_whos_turn();
                 fflush(stdout);
                 pos += 2;
@@ -205,7 +206,7 @@ void *thread_receive(void *arg) {
                 int x = buffer[pos + 1] - '0' + 1;
                 int y = buffer[pos + 3] - '0' + 1;
 
-                if (map[(y - 1) * MAP_SIDE + x - 1] == 1){
+                if (map[(y - 1) * MAP_SIDE + x - 1] > 0){
                     sprintf(msg, "t1");
                 } else {
                     sprintf(msg, "t0");
@@ -235,6 +236,16 @@ void *thread_receive(void *arg) {
                 printf("Opponent ready !");
                 fflush(stdout);
                 pos++;
+
+            } else if (buffer[pos] == 'k'){
+                mvCursor(5, 25);
+                printf("YOU'VE SUNK A BOAT!");
+                fflush(stdout);
+                pos++;
+                anim_boat_sinking(opponent_player);
+
+            } else {
+                pos++;
             }
         }
     }
@@ -259,7 +270,7 @@ int fire(int x, int y){
         int target_step = 0;
         int xBomb = 50;
         while (millis() - start < 3000 || got_answer == 0){
-            if (millis() - last_step > anim_sleep && cur_y > -6){
+            if (millis() - last_step > anim_sleep && cur_y > -9){
                 if (cur_y > 0){
                     mvCursor(xBomb, cur_y + 0); printf("  /\\");
                     mvCursor(xBomb, cur_y + 1); printf(" /  \\");
@@ -267,8 +278,17 @@ int fire(int x, int y){
                     mvCursor(xBomb, cur_y + 3); printf(" |  |");
                     mvCursor(xBomb, cur_y + 4); printf("/ == \\");
                     mvCursor(xBomb, cur_y + 5); printf("|/**\\|");
-                    mvCursor(xBomb, cur_y + 6); printf("       ");
-                } else if (cur_y > -6){
+                    if (steps_left % 2 == 0){
+                        mvCursor(xBomb, cur_y + 6); printf(" %s*%s* %s* ", BOLD_HI_RED, BOLD_YELLOW, BOLD_HI_RED);
+                        mvCursor(xBomb, cur_y + 7); printf("  %s*%s*  ", BOLD_YELLOW, BOLD_HI_RED);
+                        mvCursor(xBomb, cur_y + 8); printf("   %s*  ", BOLD_YELLOW);
+                    } else {
+                        mvCursor(xBomb, cur_y + 6); printf(" %s* %s*%s* ", BOLD_HI_YELLOW, BOLD_RED, BOLD_HI_YELLOW);
+                        mvCursor(xBomb, cur_y + 7); printf("  %s*%s*  ", BOLD_RED, BOLD_HI_YELLOW);
+                        mvCursor(xBomb, cur_y + 8); printf("  %s*   ", BOLD_RED);
+                    }
+                    mvCursor(xBomb, cur_y + 9); printf("       %s", RESET);
+                } else if (cur_y > -9){
                     int y = 0;
                     if (cur_y > -1) {mvCursor(xBomb, y++); printf("  /\\");}
                     if (cur_y > -2) {mvCursor(xBomb, y++); printf(" /  \\");}
@@ -276,7 +296,16 @@ int fire(int x, int y){
                     if (cur_y > -4) {mvCursor(xBomb, y++); printf(" |  |");}
                     if (cur_y > -5) {mvCursor(xBomb, y++); printf("/ == \\");}
                     if (cur_y > -6) {mvCursor(xBomb, y++); printf("|/**\\|");}
-                    mvCursor(xBomb, y); printf("        ");
+                    if (steps_left % 2 == 0){
+                        if (cur_y > -7) {mvCursor(xBomb, cur_y + 6); printf(" %s*%s* %s* ", BOLD_HI_RED, BOLD_YELLOW, BOLD_HI_RED);}
+                        if (cur_y > -8) {mvCursor(xBomb, cur_y + 7); printf("  %s*%s*  ", BOLD_YELLOW, BOLD_HI_RED);}
+                        if (cur_y > -9) {mvCursor(xBomb, cur_y + 8); printf("   %s*  ", BOLD_YELLOW);}
+                    } else {
+                        if (cur_y > -7) {mvCursor(xBomb, cur_y + 6); printf(" %s* %s*%s* ", BOLD_HI_YELLOW, BOLD_RED, BOLD_HI_YELLOW);}
+                        if (cur_y > -8) {mvCursor(xBomb, cur_y + 7); printf("  %s*%s*  ", BOLD_RED, BOLD_HI_YELLOW);}
+                        if (cur_y > -9) {mvCursor(xBomb, cur_y + 8); printf("  %s*   ", BOLD_RED);}
+                    }
+                    mvCursor(xBomb, cur_y + 9); printf("       %s", RESET);
                 }
                 anim_sleep = max(400 - ((yLow - cur_y) * 3000 / yLow), min_sleep);
                 cur_y--;
@@ -348,6 +377,31 @@ char get_input(){
     }
 }
 
+void anim_boat_sinking(int player){
+    int xBoat = 45;
+    int yBoat = 14;
+    for(int i = 0; i < 10; ++i){
+        mvCursor(xBoat, yBoat + i - 1);                     printf("                                       ");
+        mvCursor(xBoat, yBoat + 5);                         printf("----------------------------------------");
+        if (i < 6) {mvCursor(xBoat + 13, yBoat + 0 + i);                 printf(" |    |    | ");}
+        if (i < 5) {mvCursor(xBoat + 12, yBoat + 1 + i);                printf(" )_)  )_)  )_)  ");}
+        if (i < 4) {mvCursor(xBoat + 11, yBoat + 2 + i);               printf(" )___))___))___)\\  ");}
+        if (i < 3) {mvCursor(xBoat + 9, yBoat + 3 + i);             printf("  )____)____)_____)\\\\    ");}
+        if (i < 2) {mvCursor(xBoat + 8, yBoat + 4 + i);             printf(" _____|____|____|____\\\\\\__ ");}
+        if (i < 1) {mvCursor(xBoat, yBoat + 5 + i);         printf("---------\\                   /---------");}
+        if (i % 2) {mvCursor(xBoat, yBoat + 6);             printf("  ^^^^^ ^^^^^^^^^^^^^^^^^^^^^          ");}
+        else       {mvCursor(xBoat, yBoat + 6);             printf("        ^^^^^^^^^^^^^^^^^^^^^ ^^^^^    ");}
+                    mvCursor(xBoat, yBoat + 7 + i % 2);     printf("    ^^^^      ^^^^     ^^^    ^^       ");
+                    mvCursor(xBoat, yBoat + 8 - i % 2);     printf("         ^^^^      ^^^                 ");
+                    mvCursor(xBoat, yBoat + 9);             printf("");
+        fflush(stdout);
+        usleep(500000);
+    }
+    for(int i = 0; i < 5; ++i){
+        mvCursor(xBoat, yBoat + 5 + i);                     printf("                                       ");
+    }
+}
+
 void anim_shoot_received(int x, int y){
     int cur_x = 60;
     const int yTarget = y * vsteps + MAP_SIDE * vsteps + 1 + yTOP + 3;
@@ -355,40 +409,50 @@ void anim_shoot_received(int x, int y){
     // const int xTarget = MAP_SIDE * hsteps + 3;
 
     char color = 0;
-    while (cur_x > xTarget){
+    while (cur_x >= xTarget){
     
         // Redraw the map where the shot was fired
         for(int i = 0; i < MAP_SIDE; ++i){
             mvCursor(i * hsteps + 3, yTarget);
             if (map[(y - 1) * MAP_SIDE + i] == 0){
                 printf("|   |");
-            } else if (map[(y - 1) * MAP_SIDE + i] == 1){
-                printf("|%s[x]%s|", BOLD_YELLOW, RESET);
-            } else if (map[(y - 1) * MAP_SIDE + i] == 2){
-                printf("|%s @ %s|", BOLD_CYAN, RESET);
-            } else if (map[(y - 1) * MAP_SIDE + i] == 3){
+            } else if (map[(y - 1) * MAP_SIDE + i] > 10){
                 printf("|%s[x]%s|", BOLD_HI_RED, RESET);
+            } else if (map[(y - 1) * MAP_SIDE + i] > 0){
+                printf("|%s[x]%s|", BOLD_YELLOW, RESET);
+            } else if (map[(y - 1) * MAP_SIDE + i] == -1){
+                printf("|%s @ %s|", BOLD_CYAN, RESET);
             }
         }
         printf("    ");
 
         // Draw the bomb
-        mvCursor(cur_x, yTarget);
-        if (color == 0){
-            printf("%s<=%s<<%s ", BOLD_HI_RED, BOLD_YELLOW, RESET);
-            color = 1;
-        } else {
-            printf("%s<=%s<<%s ", BOLD_HI_YELLOW, BOLD_RED, RESET);
-            color = 0;
+        if (cur_x != xTarget){
+            mvCursor(cur_x, yTarget);
+            if (color == 0){
+                printf("%s<=%s<<%s ", BOLD_HI_RED, BOLD_YELLOW, RESET);
+                color = 1;
+            } else {
+                printf("%s<=%s<<%s ", BOLD_HI_YELLOW, BOLD_RED, RESET);
+                color = 0;
+            }
+            fflush(stdout);
+            usleep(100000);
         }
-        fflush(stdout);
-        usleep(100000);
         cur_x--;
     }
 
+    int map_pos = (y - 1) * MAP_SIDE + x - 1;
+    if (map[map_pos] > 0){
+        int boat_type = map[map_pos] - 1;
+        hits_per_boat[boat_type]++;
+        if (hits_per_boat[boat_type] >= boats_size[boat_type]){
+            mvCursor(60, 8);
+            printf("You've lost a boat!");
+            send_message("k");
+        }
 
-    if (map[(y - 1) * MAP_SIDE + x - 1] == 1){
-        map[(y - 1) * MAP_SIDE + x - 1] = 3;
+        map[map_pos] += 10;
         mvCursor(x * hsteps, yTarget);
         printf("%s(@)%s", BOLD_HI_RED, RESET);
         nb_self_touched++;
@@ -407,7 +471,7 @@ void anim_shoot_received(int x, int y){
         printf("%s[x]%s", BOLD_HI_RED, RESET);
 
     } else {
-        map[(y - 1) * MAP_SIDE + x - 1] = 2;
+        map[map_pos] = -1;
         for(int i = 0; i < 10; ++i){
             mvCursor(x * hsteps, yTarget);
             printf("%s(%s@%s)%s", BOLD_CYAN, BOLD_BLUE, BOLD_CYAN, RESET);
@@ -613,16 +677,16 @@ void init_new_game(){
             x = xCur * hsteps;
             y = yCur * vsteps + MAP_SIDE * vsteps + 1 + yTOP + 3;
 
-            // Check if map already has a boat
+            // Check if map already has a boat (for color)
             spot_taken = 0;
             for(int i = 0; i < this_boat_size; i++){
                 if (dir == 0){
-                    if (map[(yCur - 1) * MAP_SIDE + xCur + i - 1] == 1){
+                    if (map[(yCur - 1) * MAP_SIDE + xCur + i - 1] != 0){
                         spot_taken = 1;
                         break;
                     }
                 } else {
-                    if (map[(yCur + i - 1) * MAP_SIDE + xCur - 1] == 1){
+                    if (map[(yCur + i - 1) * MAP_SIDE + xCur - 1] != 0){
                         spot_taken = 1;
                         break;
                     }
@@ -634,6 +698,7 @@ void init_new_game(){
                 printf("%s", BOLD_GREEN);
             }
             
+            // Move the boat
             for(int i = 0; i < this_boat_size; i++){
                 if (dir == 0){
                     if (map[(yCur - 1) * MAP_SIDE + xCur + i - 1] == 0){
@@ -703,7 +768,7 @@ void init_new_game(){
                     printf("%s", BOLD_YELLOW);
                     if (dir == 0){
                         for(int i = 0; i < this_boat_size; i++){
-                            map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = 1;
+                            map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1;
                             mvCursor(x + i * hsteps, y);
                             if (i == 0){
                                 printf("<x]");
@@ -715,7 +780,7 @@ void init_new_game(){
                         }
                     } else {
                         for(int i = 0; i < this_boat_size; i++){
-                            map[(yCur + i - 1) * MAP_SIDE + xCur - 1] = 1;
+                            map[(yCur + i - 1) * MAP_SIDE + xCur - 1] = placed_boats + 1;
                             mvCursor(x, y + i * vsteps);
                             if (i == 0){
                                 printf(" ^");
@@ -872,9 +937,11 @@ void write_exit_flags(int flags) {
 }
 
 int send_message(char *message) {
-    // mvCursor(60, 5);
-    // printf("Sending: %s         ", message);
-    // resetCursor();
+#if PRT_IN_OUT == 1
+    mvCursor(60, 5);
+    printf("Sending : %s         ", message);
+    resetCursor();
+#endif
     return send(new_socket, message, strlen(msg), 0);
 }
 
