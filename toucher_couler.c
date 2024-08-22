@@ -11,11 +11,11 @@
 #include "terminal_colors.h"
 #include <signal.h>
 
-#define DEFAULT_PORT 9468
-#define BUFFER_SIZE 1024
+#define DEFAULT_PORT    9468
+#define BUFFER_SIZE     1024
 
-#define DEBUG_ON 0
-#define PRT_IN_OUT 1
+#define DEBUG_ON    0
+#define PRT_IN_OUT  0
 
 #define MAP_SIDE    10
 #define yTOP        3
@@ -57,7 +57,7 @@ static char game_draw = 0;
 
 static int score_self = 0;
 static int score_opponent = 0;
-
+const int max_score = 5 + 4 + 3 + 3 + 2;
 
 static int nb_boats = 5;
 static int boats_size[5] = {5, 4, 3, 3, 2};
@@ -78,7 +78,7 @@ int read_exit_flags();
 void write_exit_flags(int flags);
 int send_message(char *message);
 void update_whos_turn();
-int check_win(char player);
+int check_win();
 void init_new_game();
 void choose_and_send_first_player(int player);
 int check_draw();
@@ -113,6 +113,10 @@ int max(int a, int b){
 
 
 int main(int argc, char **argv) {
+    for(int i = 0; i < 10; ++i){
+        system("beep");
+        usleep(100000);
+    }
     // anim_boat_sinking(1);
     signal(SIGINT, signal_handler);
     
@@ -214,6 +218,8 @@ void *thread_receive(void *arg) {
                 }
                 send_message(msg);
                 anim_shoot_received(x, y);
+
+                check_win();
 
                 prt_debug();
                 game_steps++;
@@ -331,7 +337,7 @@ int fire(int x, int y){
                 fflush(stdout);
             }
         }
-        if (answer_touched){
+        if (answer_touched){    // ENEMI TOUCHE
             map_opp[(y - 1) * MAP_SIDE + x - 1] = 3;
             for(int i = 0; i < 5; ++i){
                 resetCursor();
@@ -344,7 +350,7 @@ int fire(int x, int y){
                 usleep(300000);
             }
             nb_opp_touched++;
-        } else {
+        } else {    // DANS L'EAU
             map_opp[(y - 1) * MAP_SIDE + x - 1] = 2;
             for(int i = 0; i < 5; ++i){
                 resetCursor();
@@ -357,6 +363,7 @@ int fire(int x, int y){
                 usleep(300000);
             }
         }
+        if (check_win()) return 1;
         current_player = opponent_player;
         update_whos_turn();
         return 1;
@@ -400,7 +407,7 @@ void anim_boat_sinking(int player){
         usleep(500000);
     }
     for(int i = 0; i < 5; ++i){
-        mvCursor(xBoat, yBoat + 5 + i);                     printf("                                       ");
+        mvCursor(xBoat, yBoat + 5 + i);                     printf("                                        ");
     }
 }
 
@@ -411,6 +418,8 @@ void anim_shoot_received(int x, int y){
     // const int xTarget = MAP_SIDE * hsteps + 3;
 
     char color = 0;
+    const int timer = 2800000 / (cur_x - xTarget);
+
     while (cur_x >= xTarget){
     
         // Redraw the map where the shot was fired
@@ -439,7 +448,7 @@ void anim_shoot_received(int x, int y){
                 color = 0;
             }
             fflush(stdout);
-            usleep(70000);
+            usleep(timer);
         }
         cur_x--;
     }
@@ -544,43 +553,29 @@ int check_args(int argc, char **argv){
     return 0;
 }
 
-int check_win(char player){
+int check_win(){
     int ret = 0;
-    for (int i = 0; i < MAP_SIDE; i++){
-        if (map[i * MAP_SIDE] == player && map[i * MAP_SIDE + 1] == player && map[i * MAP_SIDE + 2] == player){
-            ret = 1;
-            break;
-        }
-        if (map[i] == player && map[i + MAP_SIDE] == player && map[i + 2 * MAP_SIDE] == player){
-            ret = 1;
-            break;
-        }
+    if (nb_self_touched == max_score){
+        ret = self_player;
     }
-    if (map[0] == player && map[4] == player && map[8] == player){
-        ret = 1;
+    if (nb_opp_touched == max_score){
+        ret = opponent_player;
     }
-    if (map[2] == player && map[4] == player && map[6] == player){
-        ret = 1;
-    }
-    if (ret == 1){
-        end_game = 1;
-        winner = player;
-        printf("\033[15;1H");
-        if (player == self_player){
-            printf("You win!\n");
-            score_self++;
+    mvCursor(55, 25);
+    printf("Lifes: You: %d, Ennemy: %d", max_score - nb_self_touched, max_score - nb_opp_touched);
+    if (ret != 0){
+        mvCursor(5, 25);
+        if (ret == self_player){
+            printf("YOU WIN !!!");
         } else {
-            printf("You loose!");
-            score_opponent++;
+            printf("GAME OVER !!!");
         }
-        printf("\033[17;1H");
-        printf("Score: %d - %d", score_self, score_opponent);
-        if (server_mode == 1){
-            printf(" Press 'r' to restart");
-        }
-        resetCursor();
+        end_game = 1;
+        current_player = 0;
         fflush(stdout);
+        write_exit_flags(1);
     }
+
     return ret;
 }
 
