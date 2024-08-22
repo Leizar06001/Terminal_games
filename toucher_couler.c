@@ -90,6 +90,7 @@ void *thread_receive(void *arg);
 char get_input();
 int fire(int x, int y);
 void anim_shoot_received(int x, int y);
+void anim_boat_sinking(int player);
 
 void signal_handler(int sig) {
     (void)sig;
@@ -112,7 +113,7 @@ int max(int a, int b){
 
 
 int main(int argc, char **argv) {
-    anim_boat_sinking(1);
+    // anim_boat_sinking(1);
     signal(SIGINT, signal_handler);
     
     if (check_args(argc, argv) != 0){
@@ -378,6 +379,7 @@ char get_input(){
 }
 
 void anim_boat_sinking(int player){
+    (void)player;
     int xBoat = 45;
     int yBoat = 14;
     for(int i = 0; i < 10; ++i){
