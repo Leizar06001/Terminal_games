@@ -439,7 +439,7 @@ void anim_shoot_received(int x, int y){
                 color = 0;
             }
             fflush(stdout);
-            usleep(100000);
+            usleep(70000);
         }
         cur_x--;
     }
