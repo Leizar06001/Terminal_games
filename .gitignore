@@ -1,3 +1,8 @@
+*.vscode
+game
+morpion
+toucher_couler
+
 # Prerequisites
 *.d
 
