@@ -17,9 +17,12 @@ all: tc
 tc: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
 
-re: clean all
+re: fclean all
 
 clean:
-	rm -f toucher_couler $(OBJS)
+	rm -f $(OBJS)
+
+fclean: clean
+	rm -f $(NAME)
 
 .PHONY: all clean
