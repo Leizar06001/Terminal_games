@@ -127,6 +127,9 @@ int fire(int x, int y){
         int target_step = 0;
         int xBomb = 50;
         while (millis() - start < 3000 || got_answer == 0){
+            if (millis() - start > 10000){
+                return 0;
+            }
             if (millis() - last_step > anim_sleep && cur_y > -9){
                 if (cur_y > 0){
                     mvCursor(xBomb, cur_y + 0); printf("  /\\");

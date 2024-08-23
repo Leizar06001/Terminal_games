@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <termios.h>
 #include <pthread.h>
+#include <sys/select.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -62,14 +63,8 @@ int boats_size[5] = {5, 4, 3, 3, 2};
 int hits_per_boat[5] = {0, 0, 0, 0, 0};
 
 
-void moveCursor(char direction, char steps, int map);
-int read_exit_flags();
-void write_exit_flags(int flags);
-void update_whos_turn();
-int check_win();
+
 void init_new_game();
-void choose_and_send_first_player(int player);
-int check_draw();
 int check_args(int argc, char **argv);
 int init_network(char **argv);
 int init_vars();
@@ -82,8 +77,6 @@ void signal_handler(int sig) {
     exit_game();
     exit(0);
 }
-
-
 
 void display_resize_win(){
     const int h = 50;
@@ -175,13 +168,39 @@ void *thread_receive(void *arg) {
     (void)arg;
     char buffer[BUFFER_SIZE] = {0};
 
-    while (read_exit_flags() == 0) {
+    struct timeval tv;
+    fd_set readfds;
+    int retval;
 
+    
+
+    while (read_exit_flags() == 0) {
+        FD_ZERO(&readfds);
+        FD_SET(new_socket, &readfds);
+
+        // Set timeout to 1 second
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+
+        retval = select(new_socket + 1, &readfds, NULL, NULL, &tv);
+
+        if (retval == -1){
+            mvCursor(1, 1);
+            perror("select()");
+            write_exit_flags(1);
+            break;
+        } else if (retval == 0){
+            continue;
+        }
+
+        if (!FD_ISSET(new_socket, &readfds)){
+            continue;
+        }
+        
         if (read(new_socket, buffer, BUFFER_SIZE) <= 0){
+            mvCursor(1, 1);
             printf("Client disconnected");
-            pthread_mutex_lock(&mut_exit_flags);
-            exit_flags = 1;
-            pthread_mutex_unlock(&mut_exit_flags);
+            write_exit_flags(1);
             break;
         }
 
