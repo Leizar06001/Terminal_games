@@ -897,10 +897,10 @@ void init_new_game(){
                             mvCursor(x + i * hsteps, y);
                             if (i == 0){
                                 printf("<x]");
-                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1 + 10;
+                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1;
                             } else if (i == this_boat_size - 1){
                                 printf("[x>");
-                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1 + 20;
+                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1;
                             } else {
                                 printf("[x]");
                                 map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1;
@@ -912,10 +912,10 @@ void init_new_game(){
                             mvCursor(x, y + i * vsteps);
                             if (i == 0){
                                 printf(" ^");
-                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1 + 30;
+                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1;
                             } else if (i == this_boat_size - 1){
                                 printf(" v");
-                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1 + 40;
+                                map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1;
                             } else {
                                 printf("[x]");
                                 map[(yCur - 1) * MAP_SIDE + xCur + i - 1] = placed_boats + 1;
