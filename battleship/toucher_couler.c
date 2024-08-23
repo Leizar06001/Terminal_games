@@ -54,14 +54,14 @@ char server_mode = 0;
 int game_steps = 0;
 char game_draw = 0;
 
-// static int score_self = 0;
-// static int score_opponent = 0;
 const int max_score = 5 + 4 + 3 + 3 + 2;
 
 int nb_boats = 5;
 int boats_size[5] = {5, 4, 3, 3, 2};
 int hits_per_boat[5] = {0, 0, 0, 0, 0};
 
+const int winh = 50;
+const int winw = 90;
 
 
 void init_new_game();
@@ -79,20 +79,17 @@ void signal_handler(int sig) {
 }
 
 void display_resize_win(){
-    const int h = 50;
-    const int w = 90;
-
     char line[128];
     char walls[128];
-    memset(line, '-', w);
-    line[w] = 0;
-    memset(walls, ' ', w);
+    memset(line, '-', winw);
+    line[winw] = 0;
+    memset(walls, ' ', winw);
     walls[0] = '|';
-    walls[w - 1] = '|';
-    walls[w] = 0;
+    walls[winw - 1] = '|';
+    walls[winw] = 0;
     system("clear");
     printf("%s\n", line);
-    for(int i = 1; i < h - 1; i++){
+    for(int i = 1; i < winh - 1; i++){
         if (i % 10 == 0){
             printf("            RESIZE THE TERMINAL TO FIT THE WHOLE FRAME, THEN PRESS ONE KEY\n");
         } else {
@@ -135,28 +132,53 @@ int main(int argc, char **argv) {
 
     resetCursor();
     printf("%s>%s<%s", BOLD_YELLOW, MOVE_CURSOR_RIGHT, RESET);
+    fflush(stdout);
+
     char c;
+    struct timeval tv;
+    fd_set readfds;
+    int retval;
     while (read_exit_flags() == 0) {
-        c = get_input();
-        if (c == 'q'){
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        retval = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &tv);
+
+        if (retval == -1){
             write_exit_flags(1);
             break;
+        } else if (retval == 0){
+            continue;
         }
-        resetCursor();
-        printf(" %s ", MOVE_CURSOR_RIGHT);
-        switch (c){
-            case 'A': moveCursor('A', vsteps, 0); break;
-            case 'B': moveCursor('B', vsteps, 0); break;
-            case 'C': moveCursor('C', hsteps, 0); break;
-            case 'D': moveCursor('D', hsteps, 0); break;
-            case ' ':
-                if (current_player == self_player && opponent_ready){
-                    fire(xCur, yCur);
-                }
+        if (!FD_ISSET(STDIN_FILENO, &readfds)){
+            continue;
+        }
+
+        while ((c = get_input()) != EOF){;
+            if (c == 'q'){
+                mvCursor(1, winh);
+                printf("        >>> YOU LEFT THE GAME <<<");
+                write_exit_flags(1);
                 break;
+            }
+            resetCursor();
+            printf(" %s ", MOVE_CURSOR_RIGHT);
+            switch (c){
+                case 'A': moveCursor('A', vsteps, 0); break;
+                case 'B': moveCursor('B', vsteps, 0); break;
+                case 'C': moveCursor('C', hsteps, 0); break;
+                case 'D': moveCursor('D', hsteps, 0); break;
+                case ' ':
+                    if (current_player == self_player && opponent_ready){
+                        fire(xCur, yCur);
+                    }
+                    break;
+            }
+            resetCursor();
+            printf("%s>%s<%s", BOLD_YELLOW, MOVE_CURSOR_RIGHT, RESET);
+            fflush(stdout);
         }
-        resetCursor();
-        printf("%s>%s<%s", BOLD_YELLOW, MOVE_CURSOR_RIGHT, RESET);
     }
 
     exit_game();
@@ -172,8 +194,6 @@ void *thread_receive(void *arg) {
     fd_set readfds;
     int retval;
 
-    
-
     while (read_exit_flags() == 0) {
         FD_ZERO(&readfds);
         FD_SET(new_socket, &readfds);
@@ -187,6 +207,7 @@ void *thread_receive(void *arg) {
         if (retval == -1){
             mvCursor(1, 1);
             perror("select()");
+            fflush(stdout);
             write_exit_flags(1);
             break;
         } else if (retval == 0){
@@ -198,8 +219,9 @@ void *thread_receive(void *arg) {
         }
         
         if (read(new_socket, buffer, BUFFER_SIZE) <= 0){
-            mvCursor(1, 1);
-            printf("Client disconnected");
+            mvCursor(1, winh);
+            printf("    >>> OPPONENT HAS LEFT THE GAME <<<");
+            fflush(stdout);
             write_exit_flags(1);
             break;
         }
