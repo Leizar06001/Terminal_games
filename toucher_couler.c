@@ -21,6 +21,8 @@
 #define yTOP        3
 #define xLEFT       1
 
+const int anims_duration = 3000000;
+
 static int socket_port = DEFAULT_PORT;
 
 const char vsteps = 2;
@@ -55,8 +57,8 @@ static int end_game = 0;
 static int game_steps = 0;
 static char game_draw = 0;
 
-static int score_self = 0;
-static int score_opponent = 0;
+// static int score_self = 0;
+// static int score_opponent = 0;
 const int max_score = 5 + 4 + 3 + 3 + 2;
 
 static int nb_boats = 5;
@@ -91,6 +93,7 @@ char get_input();
 int fire(int x, int y);
 void anim_shoot_received(int x, int y);
 void anim_boat_sinking(int player);
+void anim_explosion();
 
 void signal_handler(int sig) {
     (void)sig;
@@ -113,10 +116,7 @@ int max(int a, int b){
 
 
 int main(int argc, char **argv) {
-    for(int i = 0; i < 10; ++i){
-        system("beep");
-        usleep(100000);
-    }
+    anim_explosion();
     // anim_boat_sinking(1);
     signal(SIGINT, signal_handler);
     
@@ -402,7 +402,7 @@ void anim_boat_sinking(int player){
         else       {mvCursor(xBoat, yBoat + 6);             printf("        ^^^^^^^^^^^^^^^^^^^^^ ^^^^^    ");}
                     mvCursor(xBoat, yBoat + 7 + i % 2);     printf("    ^^^^      ^^^^     ^^^    ^^       ");
                     mvCursor(xBoat, yBoat + 8 - i % 2);     printf("         ^^^^      ^^^                 ");
-                    mvCursor(xBoat, yBoat + 9);             printf("");
+                    // mvCursor(xBoat, yBoat + 9);             printf("");
         fflush(stdout);
         usleep(500000);
     }
@@ -411,7 +411,136 @@ void anim_boat_sinking(int player){
     }
 }
 
+void anim_explosion(){
+    int xBomb = 55;
+    int cur_y = 0;
+    const int maxy = 35;
+
+    mvCursor(xBomb - 6, maxy + 0); printf("                __/___            ");
+    mvCursor(xBomb - 6, maxy + 1); printf("          _____/______|           ");
+    mvCursor(xBomb - 6, maxy + 2); printf("  _______/_____\\_______\\_____     ");
+    mvCursor(xBomb - 6, maxy + 3); printf("  \\              < < <       |    ");
+    mvCursor(xBomb - 6, maxy + 4); printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    
+    const int sleep_time = 700000 / (maxy - 4);
+    for(cur_y = 0; cur_y < maxy - 4; ++cur_y){
+        mvCursor(xBomb, cur_y + 0); printf("       ");
+        mvCursor(xBomb, cur_y + 1); printf("|\\**/|");
+        mvCursor(xBomb, cur_y + 2); printf("\\ == /");
+        mvCursor(xBomb, cur_y + 3); printf(" |  |");
+        mvCursor(xBomb, cur_y + 4); printf(" |  |");
+        mvCursor(xBomb, cur_y + 5); printf(" \\  /");
+        mvCursor(xBomb, cur_y + 6); printf("  \\/");
+        fflush(stdout);
+        usleep(sleep_time);
+    }
+    for(int i = 0; i < 5; ++i){
+        mvCursor(xBomb, maxy - i); printf("       ");
+    }
+
+    const int sleep_time2 = 180000;
+
+    char *color;
+    for(int i = 0; i < 4; ++i){
+        if (i % 2 == 0){
+            color = BOLD_HI_WHITE;
+        } else {
+            color = BOLD_HI_YELLOW;
+        }
+        printf("%s", color);
+        mvCursor(xBomb - 4, maxy + -2); printf("    \\         .  ./     ");
+        mvCursor(xBomb - 4, maxy + -1); printf("  \\      .:\";'.:..\"   / ");
+        mvCursor(xBomb - 4, maxy + 0); printf("      (M^^.^~~:.'\").    ");
+        mvCursor(xBomb - 4, maxy + 1); printf("-   (/  .    . . \\ \\)  -");
+        mvCursor(xBomb - 4, maxy + 2); printf("   ((| :. ~ ^  :. .|))  ");
+        mvCursor(xBomb - 4, maxy + 3); printf("-   (\\- |  \\ /  |  /)  -");
+        printf("%s", RESET);
+        fflush(stdout);
+        usleep(sleep_time2);
+    }
+    for(int i = 0; i < 4; ++i){
+        if (i % 2 == 0){
+            color = BOLD_HI_WHITE;
+        } else {
+            color = BOLD_HI_YELLOW;
+        }
+        printf("%s", color);
+        mvCursor(xBomb - 4, maxy + -3); printf("     _.-^^---....,,--       ");
+        mvCursor(xBomb - 4, maxy + -2); printf(" _--                  --_   ");
+        mvCursor(xBomb - 4, maxy + -1); printf("<                        >) ");
+        mvCursor(xBomb - 4, maxy + 0); printf("|                         | ");
+        mvCursor(xBomb - 4, maxy + 1); printf(" \\._                   _./  ");
+        mvCursor(xBomb - 4, maxy + 2);  printf("          | ;  :|           ");
+        mvCursor(xBomb - 4, maxy + 3);  printf(" _____.,-#$&$@$#&#~,._____  ");
+        printf("%s", RESET);
+        fflush(stdout);
+        usleep(sleep_time2);
+    }
+    for(int i = 0; i < 4; ++i){
+        if (i % 2 == 0){
+            color = BOLD_HI_WHITE;
+        } else {
+            color = BOLD_HI_YELLOW;
+        }
+        printf("%s", color);
+        mvCursor(xBomb - 4, maxy + -7); printf("     _.-^^---....,,--       ");
+        mvCursor(xBomb - 4, maxy + -6); printf(" _--                  --_   ");
+        mvCursor(xBomb - 4, maxy + -5); printf("<                        >) ");
+        mvCursor(xBomb - 4, maxy + -4); printf("|                         | ");
+        mvCursor(xBomb - 4, maxy + -3); printf(" \\._                   _./  ");
+        mvCursor(xBomb - 4, maxy + -2); printf("    ```--. . , ; .--'''     ");
+        mvCursor(xBomb - 4, maxy + -1); printf("          | |   |           ");
+        mvCursor(xBomb - 4, maxy + 0);  printf("       .-=||  | |=-.        ");
+        mvCursor(xBomb - 4, maxy + 1);  printf("       `-=#$&@$#=-'         ");
+        mvCursor(xBomb - 4, maxy + 2);  printf("          | ;  :|           ");
+        mvCursor(xBomb - 4, maxy + 3);  printf(" _____.,-#$&$@$#&#~,._____  ");
+        printf("%s", RESET);
+        fflush(stdout);
+        usleep(sleep_time2);
+    }
+    for(int i = 0; i < 4; ++i){
+        if (i % 2 == 0){
+            color = BOLD_HI_WHITE;
+        } else {
+            color = BOLD_HI_YELLOW;
+        }
+        printf("%s", color);
+        mvCursor(xBomb - 4, maxy + -8); printf("                            ");
+        mvCursor(xBomb - 4, maxy + -7); printf("                            ");
+        mvCursor(xBomb - 4, maxy + -6); printf("<                        >) ");
+        mvCursor(xBomb - 4, maxy + -5); printf("|                         | ");
+        mvCursor(xBomb - 4, maxy + -4); printf(" \\._                   _./  ");
+        mvCursor(xBomb - 4, maxy + -3); printf("    ```--. . , ; .--'''     ");
+        mvCursor(xBomb - 4, maxy + -2); printf("                            ");
+        mvCursor(xBomb - 4, maxy + -1); printf("                            ");
+        mvCursor(xBomb - 4, maxy + 0);  printf("                            ");
+        mvCursor(xBomb - 4, maxy + 1);  printf("                            ");
+        mvCursor(xBomb - 4, maxy + 2);  printf("                            ");
+        mvCursor(xBomb - 4, maxy + 3);  printf("                            ");
+        printf("%s", RESET);
+        fflush(stdout);
+        usleep(sleep_time2);
+    }
+    for(int i = maxy - 8; i < maxy + 5; ++i){
+        mvCursor(xBomb - 4, i); printf("                                 ");
+    }
+    fflush(stdout);
+
+}
+
 void anim_shoot_received(int x, int y){
+
+    int map_pos = (y - 1) * MAP_SIDE + x - 1;
+    int boat_type = map[map_pos] - 1;
+    char boat_killed = 0;
+    
+    if (map[map_pos] > 0){
+        hits_per_boat[boat_type]++;
+        mvCursor(60, 8);
+        printf("You've lost a boat!");
+        boat_killed = 1;
+    }
+
     int cur_x = 60;
     const int yTarget = y * vsteps + MAP_SIDE * vsteps + 1 + yTOP + 3;
     const int xTarget = x * hsteps;
@@ -420,46 +549,45 @@ void anim_shoot_received(int x, int y){
     char color = 0;
     const int timer = 2800000 / (cur_x - xTarget);
 
-    while (cur_x >= xTarget){
-    
-        // Redraw the map where the shot was fired
-        for(int i = 0; i < MAP_SIDE; ++i){
-            mvCursor(i * hsteps + 3, yTarget);
-            if (map[(y - 1) * MAP_SIDE + i] == 0){
-                printf("|   |");
-            } else if (map[(y - 1) * MAP_SIDE + i] > 10){
-                printf("|%s[x]%s|", BOLD_HI_RED, RESET);
-            } else if (map[(y - 1) * MAP_SIDE + i] > 0){
-                printf("|%s[x]%s|", BOLD_YELLOW, RESET);
-            } else if (map[(y - 1) * MAP_SIDE + i] == -1){
-                printf("|%s @ %s|", BOLD_CYAN, RESET);
+    if (!boat_killed){
+        while (cur_x >= xTarget){
+        
+            // Redraw the map where the shot was fired
+            for(int i = 0; i < MAP_SIDE; ++i){
+                mvCursor(i * hsteps + 3, yTarget);
+                if (map[(y - 1) * MAP_SIDE + i] == 0){
+                    printf("|   |");
+                } else if (map[(y - 1) * MAP_SIDE + i] > 10){
+                    printf("|%s[x]%s|", BOLD_HI_RED, RESET);
+                } else if (map[(y - 1) * MAP_SIDE + i] > 0){
+                    printf("|%s[x]%s|", BOLD_YELLOW, RESET);
+                } else if (map[(y - 1) * MAP_SIDE + i] == -1){
+                    printf("|%s @ %s|", BOLD_CYAN, RESET);
+                }
             }
-        }
-        printf("    ");
+            printf("    ");
 
-        // Draw the bomb
-        if (cur_x != xTarget){
-            mvCursor(cur_x, yTarget);
-            if (color == 0){
-                printf("%s<=%s<<%s ", BOLD_HI_RED, BOLD_YELLOW, RESET);
-                color = 1;
-            } else {
-                printf("%s<=%s<<%s ", BOLD_HI_YELLOW, BOLD_RED, RESET);
-                color = 0;
+            // Draw the bomb
+            if (cur_x != xTarget){
+                mvCursor(cur_x, yTarget);
+                if (color == 0){
+                    printf("%s<=%s<<%s ", BOLD_HI_RED, BOLD_YELLOW, RESET);
+                    color = 1;
+                } else {
+                    printf("%s<=%s<<%s ", BOLD_HI_YELLOW, BOLD_RED, RESET);
+                    color = 0;
+                }
+                fflush(stdout);
+                usleep(timer);
             }
-            fflush(stdout);
-            usleep(timer);
+            cur_x--;
         }
-        cur_x--;
+    } else {
+        anim_explosion();
     }
 
-    int map_pos = (y - 1) * MAP_SIDE + x - 1;
     if (map[map_pos] > 0){
-        int boat_type = map[map_pos] - 1;
-        hits_per_boat[boat_type]++;
         if (hits_per_boat[boat_type] >= boats_size[boat_type]){
-            mvCursor(60, 8);
-            printf("You've lost a boat!");
             send_message("k");
         }
 
