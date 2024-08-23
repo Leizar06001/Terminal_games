@@ -536,9 +536,11 @@ void anim_shoot_received(int x, int y){
     
     if (map[map_pos] > 0){
         hits_per_boat[boat_type]++;
-        mvCursor(60, 8);
-        printf("You've lost a boat!");
-        boat_killed = 1;
+        if (hits_per_boat[boat_type] >= boats_size[boat_type]){
+            mvCursor(60, 8);
+            // printf("You've lost a boat!");
+            boat_killed = 1;
+        }
     }
 
     int cur_x = 60;
@@ -571,10 +573,10 @@ void anim_shoot_received(int x, int y){
             if (cur_x != xTarget){
                 mvCursor(cur_x, yTarget);
                 if (color == 0){
-                    printf("%s<=%s<<%s ", BOLD_HI_RED, BOLD_YELLOW, RESET);
+                    printf("%s<=%s<%s<%s ", BOLD_HI_WHITE, BOLD_YELLOW, BOLD_HI_RED, RESET);
                     color = 1;
                 } else {
-                    printf("%s<=%s<<%s ", BOLD_HI_YELLOW, BOLD_RED, RESET);
+                    printf("%s<=%s<%s<%s ", BOLD_HI_WHITE, BOLD_HI_RED, BOLD_YELLOW, RESET);
                     color = 0;
                 }
                 fflush(stdout);
@@ -587,7 +589,7 @@ void anim_shoot_received(int x, int y){
     }
 
     if (map[map_pos] > 0){
-        if (hits_per_boat[boat_type] >= boats_size[boat_type]){
+        if (boat_killed){
             send_message("k");
         }
 
@@ -690,18 +692,17 @@ int check_win(){
         ret = opponent_player;
     }
     mvCursor(55, 25);
-    printf("Lifes: You: %d, Ennemy: %d", max_score - nb_self_touched, max_score - nb_opp_touched);
+    // printf("Lifes: You: %d, Ennemy: %d", max_score - nb_self_touched, max_score - nb_opp_touched);
     if (ret != 0){
         mvCursor(5, 25);
         if (ret == self_player){
-            printf("YOU WIN !!!");
+            printf("  YOU WIN !!!");
         } else {
-            printf("GAME OVER !!!");
+            printf(" GAME OVER !!!");
         }
         end_game = 1;
         current_player = 0;
         fflush(stdout);
-        write_exit_flags(1);
     }
 
     return ret;
@@ -767,6 +768,13 @@ void init_new_game(){
     printf("<xx][xx][xx>");
     mvCursor(xBoats, yBoats + 8);
     printf("<xx][xx>");
+
+    mvCursor(xBoats, yBoats + 10);
+    printf("Move  : arrows");
+    mvCursor(xBoats, yBoats + 11);
+    printf("Rotate: 'r'");
+    mvCursor(xBoats, yBoats + 12);
+    printf("Place : space");
 
     fflush(stdout);
 
@@ -925,6 +933,10 @@ void init_new_game(){
     }
     mvCursor(xBoats - 3, yBoats + 2 * placed_boats - 2);
     printf("                                ");
+    for(int i = 0; i < 3; i++){
+        mvCursor(xBoats, yBoats + 10 + i);
+        printf("                             ");
+    }
 
     xCur = MAP_SIDE / 2;
     yCur = MAP_SIDE / 2;
@@ -947,7 +959,7 @@ void choose_and_send_first_player(int player){
 void update_whos_turn(){
     mvCursor(5, 25);
     if (self_player == current_player){
-        printf("Your turn                                ");
+        printf("  YOUR TURN !!!                          ");
     } else {
         printf("Opponent's turn                          ");
     }
