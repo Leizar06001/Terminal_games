@@ -18,3 +18,5 @@ if `<port>` is omited, uses default port
 if `<server_ip>` = '0' then starts in server mode
 
 if `<port>` is omited, uses default port
+
+<img src="https://github.com/Leizar06001/Terminal_games/blob/16166fadfbafb7846713f525be520dfff9148333/Battleship.png" width="350"/>
