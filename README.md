@@ -11,7 +11,7 @@ Organize your city and avoid traffic jams !
 
 Still in dev, sandbox mode availlable with '-s'
 
-<img src="https://github.com/Leizar06001/Terminal_games/blob/8f1b326fed5980174a6fa3ff604f2f8db55da827/ascars.png" width="800"/>
+<img src="https://github.com/Leizar06001/Terminal_games/blob/538e0b6804cb3d2f867d6d75123acc60dd363218/ascars.png" width="800"/>
 
 ## Morpion
 #### A multiplayer Tic-Tac-Toe game
