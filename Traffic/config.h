@@ -13,7 +13,7 @@
 #define CASH_PER_ROAD   40
 #define CASH_PER_CROSS  60
 
-#define SCORE_PER_CAR   10
+#define SCORE_PER_CAR   1
 
 #define CAR_STAY_AT_DEST_MIN_TIME 15        // Frames
 #define CAR_STAY_AT_DEST_MAX_TIME 70       // Frames

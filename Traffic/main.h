@@ -163,6 +163,8 @@ typedef struct s_main {
     int     fps;
     bool    god_mode;
     bool    game_over;
+    int     volume;
+    bool    music;
 
     int     board_w;
     int     board_h;
@@ -270,6 +272,13 @@ char **split(const char *str, char delim);
 uint64_t millis();
 int get_random(int max);
 int get_random_range(int min, int max);
+
+// music.c
+void init_mpg123();
+void play_mp3();
+void stop_mp3();
+void kill_audio_process();
+void set_volume(int volume);
 
 // chained.c
 int     orig_add_by_pos(t_main *main, int x, int y, int color);

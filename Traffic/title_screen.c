@@ -45,11 +45,15 @@ void print_title_screen(){
     prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 6,  "║                                                                                                    ║\n");
     prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 7,  "║                                                                                                    ║\n");
     prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 8,  "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 9,  "║                                Press %sENTER%s when you're ready to start...                           ║\n", BOLD_GREEN, RESET);
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 10, "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 11, "║                                  %s https://github.com/Leizar06001 %s                                  ║\n", BOLD_CYAN, RESET);
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 9,  "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 10,  "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 11,  "║      The game has %sMusic%s, to play it you must have %smpg123 installed%s > %ssudo apt install mpg123%s       ║\n", BOLD_HI_MAGENTA, RESET, BOLD_HI_MAGENTA, RESET, BOLD_YELLOW, RESET);
     prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 12, "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 13, "╚════════════════════════════════════════════════════════════════════════════════════════════════════╝\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 13, "║                                Press %sENTER%s when you're ready to start...                           ║\n", BOLD_GREEN, RESET);
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 14, "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 15, "║                                  %s https://github.com/Leizar06001 %s                                  ║\n", BOLD_CYAN, RESET);
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 16, "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 17, "╚════════════════════════════════════════════════════════════════════════════════════════════════════╝\n");
 }
 
 void anim_ascii(){

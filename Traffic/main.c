@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <fcntl.h>
 
+
 /* ********************************************************************************************************************** */
 //_____/\\\\\\\\\________/\\\\\\\\\\\__________/\\\\\\\\\_____/\\\\\\\\\_______/\\\\\\\\\_________/\\\\\\\\\\\___         //
 // ___/\\\\\\\\\\\\\____/\\\/////////\\\_____/\\\////////____/\\\\\\\\\\\\\___/\\\///////\\\_____/\\\/////////\\\_        //
@@ -16,7 +17,6 @@
 //          INUTILE DE PASSER LA NORME DE CODAGE À LA MOULINETTE, CE CODE EST PARFAIT !                                   //
 //                                                                                                                        //
 /* ********************************************************************************************************************** */
-
 
 void sigint_handler(int signum) {
     (void)signum;
@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
     main.god_mode = false;
 
     bool print_infos = true;
+    bool music = true;
     for(int i = 1; i < argc; i++){
         if (strcmp(argv[i], "-i") == 0){
             print_infos = false;
@@ -96,6 +97,9 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "-x") == 0){
             main.god_mode = true;
         }
+        if (strcmp(argv[i], "-m") == 0){
+            music = false;
+        }
     }
 
     // print_infos = false;
@@ -103,6 +107,12 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, sigint_handler);
     init_terminal(&main);
     disable_mouse_tracking();
+
+    if (music){
+        init_mpg123();
+        main.music = true;
+        play_mp3();
+    }
 
     if (print_infos){
         title_screen(&main);
@@ -233,6 +243,10 @@ int main(int argc, char *argv[]) {
 
     if (print_infos){
         exit_screen();
+    }
+
+    if (music){
+        kill_audio_process();
     }
 
     return 0;

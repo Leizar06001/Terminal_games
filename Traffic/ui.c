@@ -767,6 +767,8 @@ void update_ui(t_main *main) {
 
     prtxy(35, 1, "%s1 2 3 4: %sSpeed ( %s%d%s )  ", B_YELLOW, YELLOW, B_YELLOW, main->speed_index + 1, YELLOW);
     prtxy(35, 2, "%sSpace  : %sPause (%s%s%s)  ", B_YELLOW, YELLOW,(main->paused) ? B_RED: B_GREEN, (main->paused) ? "STOP" : "RUN", YELLOW);
+    prtxy(35, 3, "%s+ / -  : %sMusic volume (%s%d%s)  ", B_YELLOW, YELLOW, B_GREEN, main->volume, YELLOW);
+    prtxy(35, 4, "%sM      : %sMusic (%s%s%s)  ", B_YELLOW, YELLOW, (main->music) ? B_GREEN : B_RED, (main->music) ? "ON" : "OFF", YELLOW);
 
     if (main->game_mode == 0){
         prtxy(35, 3, "c    : New cars (%s)  ", (disable_new_cars) ? "OFF" : "ON");

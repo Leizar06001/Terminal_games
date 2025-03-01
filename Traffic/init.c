@@ -136,6 +136,8 @@ int init_main(t_main *main){
     main->screen_w = 0;
     main->screen_h = 0;
     main->game_over = false;
+    main->volume = 100;
+    // main->music = false;
 
     // LOGIC
     reset_logic(&main->logic);

@@ -140,16 +140,16 @@ int read_input(t_main *main) {
                     case ' ':
                         main->paused = (main->paused) ? false : true;
                         break;
-                    // case '+': 
-                    //     main->speed_index++;
-                    //     if (main->speed_index > NB_SPEEDS - 1) main->speed_index = NB_SPEEDS - 1;
-                    //     main->game_speed = speeds[main->speed_index];
-                    //     break;
-                    // case '-':
-                    //     main->speed_index--;
-                    //     if (main->speed_index < 0) main->speed_index = 0;
-                    //     main->game_speed = speeds[main->speed_index];
-                    //     break;
+                    case '+': 
+                        main->volume += 5;
+                        if (main->volume > 100) main->volume = 100;
+                        set_volume(main->volume);
+                        break;
+                    case '-':
+                        main->volume -= 5;
+                        if (main->volume < 0) main->volume = 0;
+                        set_volume(main->volume);
+                        break;
                     case '1':
                         main->speed_index = 0;
                         main->game_speed = speeds[main->speed_index];
@@ -179,6 +179,14 @@ int read_input(t_main *main) {
                     case 27:    // ESC -> exit
                         if (bytes_read == 1)
                             running = false;
+                        break;
+                    case 'm':
+                        main->music = (main->music) ? false : true;
+                        if (main->music){
+                            play_mp3();
+                        } else {
+                            stop_mp3();
+                        }
                         break;
                 }
 
