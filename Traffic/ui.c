@@ -21,9 +21,9 @@ char tiles_en[NB_TILES] = {
     1,  // Vertical
     1,  // Horizontal
     1,  // Crossroad
+    1,  // Traffic light
     1,  // Origins
     1,  // Destinations
-    1   // Traffic light
 };
 
 const char *tiles[NB_TILES][10] = {
@@ -42,6 +42,11 @@ const char *tiles[NB_TILES][10] = {
         "     ",
         "╗ | ╔"
     },
+    {   "🚦 🚥",
+        "     ",
+        "     ",
+        "🚥 🚦"
+    },
     {   "╝ Á ╚",
         " / \\ ",
         " │ │ ",
@@ -51,11 +56,6 @@ const char *tiles[NB_TILES][10] = {
         "┌╩╩╩┐",
         "░░░░░",
         "╗   ╔"
-    },
-    {   "🚦 🚥",
-        "     ",
-        "     ",
-        "🚥 🚦"
     }
 };
 
@@ -107,7 +107,7 @@ void draw_tile_ui(int ind, char *color){
     if (tiles[ind][0] == NULL) {
         return;
     }
-    int y = ind * (TILE_H + 1);
+    int y = ind * (TILE_H + 2);
     for (int j = 0; j < TILE_H; j++) {
         if (tiles[ind][j] == NULL) {
             break;
@@ -124,8 +124,13 @@ void ui_over(t_main *main) {
     int tile_over = -1;
     int tile_selected = -1;
     if (main->mouse_x < TILE_W + 1){
-        tile_over = (main->mouse_y - Y_TOP) / (TILE_H + 1);
+        tile_over = (main->mouse_y - Y_TOP) / (TILE_H + 2);
+        
         if (tile_over < NB_TILES) {
+            if (tiles_en[tile_over] == 0){
+                return;
+            }
+
             // Clear previous over
             if (main->ui.tile_over != tile_over && main->ui.tile_over != -1) {
                 draw_tile_ui(main->ui.tile_over, TILE_COLOR);
@@ -638,6 +643,8 @@ void check_tiles_to_be_removed(t_main *main) {
         // Remove the tile
         main->mapt[y][x].type = 0;
         clear_tile_map(x, y);
+        // Update crossroads
+        update_crossroads(main, x, y);
         // Clear over map
         main->mapt[y][x].action = 0;
 
@@ -992,18 +999,28 @@ void draw_ui(t_main *main) {
     }
     prtxy(TILE_W + 1, Y_TOP - 1, "┬");
     for(int i =0; i < NB_TILES; ++i){
-        int y = Y_TOP + i * (TILE_H + 1);
+        if (tiles_en[i] == 0) {
+            break;
+        }
+        int y = Y_TOP + i * (TILE_H + 2);
         if (tiles[i][0] == NULL) {
             break;
         }
         // Draw boxes
-        for(int j = 0; j < TILE_H + 1; ++j){
+        for(int j = 0; j < TILE_H + 2; ++j){
             prtxy(TILE_W + 1, y + j, "│");
         }
-        if (i < NB_TILES - 1) {
-            prtxy(1, y + TILE_H, "─────┤");
+        // Price
+        if (i == TILE_VERT || i == TILE_HORI){
+            prtxy(1, y + TILE_H, " %s%d $%s", B_YELLOW, CASH_PER_ROAD, ui_color);
+        } else if (i == TILE_CROS){
+            prtxy(1, y + TILE_H, " %s%d $%s", B_YELLOW, CASH_PER_CROSS, ui_color);
+        }
+
+        if (i >= NB_TILES - 1 || tiles_en[i + 1] == 0){ 
+            prtxy(1, y + TILE_H + 1, "─────┘");
         } else {
-            prtxy(1, y + TILE_H, "─────┘");
+            prtxy(1, y + TILE_H + 1, "─────┤");
         }
 
         // Draw tiles

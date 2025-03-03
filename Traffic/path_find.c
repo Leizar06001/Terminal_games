@@ -14,17 +14,17 @@ int DIRECTION[4][2] = { {0,-1}, {0,1}, {-1,0}, {1,0} };
  */
 static int getTileForBFS(int originalTile, int x, int y, int xOrig, int yOrig)
 {
-    if (originalTile == 4) {
+    if (originalTile == MAP_TILE_ORIG) {
         // Passable seulement s'il s'agit de l'origine BFS
         if (x == xOrig && y == yOrig) {
-            return 3;  // on assimile l'origine à un croisement pour pouvoir partir dans n'importe quelle direction
+            return MAP_TILE_CROS;  // on assimile l'origine à un croisement pour pouvoir partir dans n'importe quelle direction
         } else {
-            return 0;  // bloqué
+            return MAP_TILE_EMPTY;  // bloqué
         }
     }
-    else if (originalTile == 5) {
+    else if (originalTile == MAP_TILE_DEST) {
         // Les destinations sont traitées comme des croisements
-        return 3;
+        return MAP_TILE_CROS;
     }
     // Sinon, on renvoie tel quel
     return originalTile;
@@ -39,33 +39,33 @@ static int getTileForBFS(int originalTile, int x, int y, int xOrig, int yOrig)
  */
 static bool isValidTransition(int currentTile, int nextTile, int dx, int dy)
 {
-    if (nextTile == 0) return false; // bloqué
+    if (nextTile == MAP_TILE_EMPTY) return false; // bloqué
 
     // 1 = vertical => ne peut bouger que haut/bas
-    if (currentTile == 1) {
+    if (currentTile == MAP_TILE_VERT) {
         // dx=0, dy=-1 (haut) ou dy=1 (bas)
         if (dx == 0 && (dy == -1 || dy == 1)) {
             // next doit être 1 ou 3
-            return (nextTile == 1 || nextTile == 3);
+            return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS);
         }
         return false;
     }
     // 2 = horizontal => ne peut bouger que gauche/droite
-    if (currentTile == 2) {
+    if (currentTile == MAP_TILE_HORI) {
         if (dy == 0 && (dx == -1 || dx == 1)) {
-            return (nextTile == 2 || nextTile == 3);
+            return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS);
         }
         return false;
     }
     // 3 = croisement => peut aller dans toutes les directions (mais "logiquement")
     //   - si on va haut/bas => la case suivante doit être 1 ou 3
     //   - si on va gauche/droite => la case suivante doit être 2 ou 3
-    if (currentTile == 3) {
+    if (currentTile == MAP_TILE_CROS) {
         if (dx == 0 && (dy == -1 || dy == 1)) {
-            return (nextTile == 1 || nextTile == 3);
+            return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS);
         }
         else if (dy == 0 && (dx == -1 || dx == 1)) {
-            return (nextTile == 2 || nextTile == 3);
+            return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS);
         }
         return false;
     }
@@ -95,7 +95,7 @@ void bfsFromOrigin(t_map_tile mapt[MAX_H][MAX_W],
 
     // On regarde le "tile effectif" de l'origine
     int tileOrig = getTileForBFS(mapt[yOrig][xOrig].type, xOrig, yOrig, xOrig, yOrig);
-    if (tileOrig == 0) {
+    if (tileOrig == MAP_TILE_EMPTY) {
         // Si l'origine est bloquée quand ce n'est pas la bonne case, BFS = vide
         return;
     }
@@ -119,7 +119,7 @@ void bfsFromOrigin(t_map_tile mapt[MAX_H][MAX_W],
 
         // Si la case courante est une destination (type=5) et que 
         // ce n'est pas la case d'origine, on n'explore pas les voisins.
-        if (mapt[cy][cx].type == 5 && !(cx == xOrig && cy == yOrig)) {
+        if (mapt[cy][cx].type == MAP_TILE_DEST && !(cx == xOrig && cy == yOrig)) {
             // On a "atteint" cette destination, donc on ne la traverse pas
             continue;
         }
@@ -227,7 +227,7 @@ void update_paths_old(t_main *main)
                     int len = reconstructPath(dest->pos.x, dest->pos.y, parent, bufferPath);
 
                     // On peut imposer une taille mini (par ex. >=3)
-                    if (len >= 3) {
+                    if (len >= 2) {
                         // Alloue
                         t_pos *allocatedPath = malloc(len * sizeof(t_pos));
                         if (allocatedPath) {

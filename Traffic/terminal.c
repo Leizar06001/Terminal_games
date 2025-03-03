@@ -20,7 +20,8 @@ void enable_mouse_tracking_extended() {
 */
 
 void disable_mouse_tracking() {
-    printf("\033[?1000l"); // Désactive le mode souris
+    // printf("\033[?1000l"); // Désactive le mode souris
+    printf("\033[?1003l\033[?1006l");
     fflush(stdout);
 }
 

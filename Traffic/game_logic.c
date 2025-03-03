@@ -385,15 +385,15 @@ void game_logic_loop(t_main *main){
 void switch_game_to_normal(t_main *main){
     main->game_mode = 1;
     disable_new_cars = true;
-    tiles_en[3] = 0;
-    tiles_en[4] = 0;
+    tiles_en[TILE_ORIG] = 0;
+    tiles_en[TILE_DEST] = 0;
     reset_game(main);
 }
 
 void switch_game_to_sandbox(t_main *main){
     main->game_mode = 0;
     disable_new_cars = false;
-    tiles_en[3] = 1;
-    tiles_en[4] = 1;
+    tiles_en[TILE_ORIG] = 1;
+    tiles_en[TILE_DEST] = 1;
     reset_game(main);
 }

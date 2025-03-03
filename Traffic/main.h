@@ -8,10 +8,17 @@
 #define TILE_VERT   0    // Vertical road
 #define TILE_HORI   1    // Horizontal road
 #define TILE_CROS   2    // Crossroad
-#define TILE_ORIG   3    // Origin
-#define TILE_DEST   4    // Destination
-#define TILE_LIGHT  5    // Traffic light
+#define TILE_LIGHT  3    // Traffic light
+#define TILE_ORIG   4    // Origin
+#define TILE_DEST   5    // Destination
 
+#define MAP_TILE_EMPTY 0
+#define MAP_TILE_VERT  TILE_VERT + 1
+#define MAP_TILE_HORI  TILE_HORI + 1
+#define MAP_TILE_CROS  TILE_CROS + 1
+#define MAP_TILE_LIGHT TILE_LIGHT + 1
+#define MAP_TILE_ORIG  TILE_ORIG + 1
+#define MAP_TILE_DEST  TILE_DEST + 1
 
 #include "config.h"
 #include "includes.h"
