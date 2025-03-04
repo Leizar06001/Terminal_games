@@ -157,15 +157,21 @@ int place_return_car(t_main *main, int car_id){
             int color = main->dests[car->dest].color_index;
             float ratio = 1.0;
             int extra_time = DEST_EXTRA_TIME_PER_CAR;
+
+            // This bonus depends of the distance the car has to travel
+            int car_path_len = main->paths[car->origin][car->dest][car->path_index].length;
+            float car_bonus_multiplier = (float)car_path_len * 0.0528 + 0.3369;
+            if (car_bonus_multiplier > 2) car_bonus_multiplier = 2;
+
             if (main->logic.nb_orig_colors[color] != 0){
                 ratio = (float)main->logic.nb_dest_colors[color] / (float)main->logic.nb_orig_colors[color];
-                ratio += 0.3;
-                if (ratio < 0.4) ratio = 0.4;
-                else if (ratio > 1.4) ratio = 1.4;
+                ratio += 0.25;
+                // if (ratio < 0.4) ratio = 0.4;
+                if (ratio > 1.4) ratio = 1.4;
                 extra_time = DEST_EXTRA_TIME_PER_CAR * ratio;
             }
 
-            main->dests[car->dest].time_left += extra_time;
+            main->dests[car->dest].time_left += (extra_time * car_bonus_multiplier);
             if (main->dests[car->dest].time_left > DEST_DEFAULT_TIME){
                 main->dests[car->dest].time_left = DEST_DEFAULT_TIME;
             }
@@ -495,7 +501,7 @@ int move_car(t_main *main, t_cars *car){
                 car->state = CAR_AT_DEST;
                 path->dest->nb_cars_in++;
                 // prt_nb_cars_dest(main, car->dest);
-                print_dest_infos(main, &main->dests[car->dest]);
+                update_dest_infos(main, &main->dests[car->dest]);
                 main->player.cash += CASH_PER_CAR;
                 main->player.score += SCORE_PER_CAR;
                 can_move = 0;
@@ -529,28 +535,36 @@ int move_car(t_main *main, t_cars *car){
     return can_move;
 }
 
-void draw_car(t_cars *car){
+void draw_car(t_main *main, t_cars *car){
     char *unicode = 0;
     if (car->can_move){
         if (car->travel_dir == 1){
             if (car->dir == 'N'){
-                unicode = "⮝";
+                unicode = main->cars_charset[1][0];
+                // unicode = "⮝";
             } else if (car->dir == 'S'){
-                unicode = "⮟";
+                unicode = main->cars_charset[1][1];
+                // unicode = "⮟";
             } else if (car->dir == 'E'){
-                unicode = "⮞";
+                unicode = main->cars_charset[1][2];
+                // unicode = "⮞";
             } else if (car->dir == 'W'){
-                unicode = "⮜";
+                unicode = main->cars_charset[1][3];
+                // unicode = "⮜";
             }
         } else {
             if (car->dir == 'N'){
-                unicode = "⮙";
+                unicode = main->cars_charset[2][0];
+                // unicode = "⮙";
             } else if (car->dir == 'S'){
-                unicode = "⮛";
+                unicode = main->cars_charset[2][1];
+                // unicode = "⮛";
             } else if (car->dir == 'E'){
-                unicode = "⮚";
+                unicode = main->cars_charset[2][2];
+                // unicode = "⮚";
             } else if (car->dir == 'W'){
-                unicode = "⮘";
+                unicode = main->cars_charset[2][3];
+                // unicode = "⮘";
             }
         }
     } else {
@@ -585,7 +599,7 @@ void update_cars(t_main *main){
                     
                     if (place_return_car(main, c)){
                         // prt_nb_cars_dest(main, car->dest);
-                        print_dest_infos(main, &main->dests[car->dest]);
+                        update_dest_infos(main, &main->dests[car->dest]);
                     }
                 }
             }
@@ -606,7 +620,7 @@ void update_cars(t_main *main){
             }
             // Draw the car (if it's not at the origin or destination)
             if (car->index_in_path > 0 && car->index_in_path < main->paths[car->origin][car->dest][car->path_index].length - 1){
-                draw_car(car);
+                draw_car(main, car);
             }
         }
 

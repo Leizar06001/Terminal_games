@@ -71,7 +71,7 @@ typedef struct s_light {
 } t_light;
 
 typedef struct s_light_list {
-    t_light *light;
+    t_light     *light;
     struct s_light_list *next;
 } t_light_list;
 
@@ -101,6 +101,8 @@ typedef struct s_ui {
     int     infos_prev_x;
     int     infos_prev_y;
     char    info_prev_type;
+    bool    show_help;
+    bool    alt_fonts;
 } t_ui;
 
 typedef struct s_path {
@@ -114,7 +116,7 @@ typedef struct s_path {
 } t_path;
 
 typedef struct s_tile_paths {
-    t_path *path;
+    t_path      *path;
     struct s_tile_paths *next;
 } t_tile_paths;
 
@@ -135,84 +137,89 @@ typedef struct s_player {
 } t_player;
 
 typedef struct s_logic {
-    int day;
-    int weekDay;
-    int hour;
-    int minute;
-    int prev_day;
-    int prev_weekDay;
-    int prev_hour;
-    bool trig_new_day;
-    bool trig_new_hour;
-    bool trig_new_week;
+    int     day;
+    int     weekDay;
+    int     hour;
+    int     minute;
+    int     prev_day;
+    int     prev_weekDay;
+    int     prev_hour;
+    bool    trig_new_day;
+    bool    trig_new_hour;
+    bool    trig_new_week;
 
-    bool warning_will_loose;
-    bool warning_will_loose_prev;
+    bool    warning_will_loose;
+    bool    warning_will_loose_prev;
 
-    int colors_cnt;
-    int max_colors;
-    int colors[8];
-    bool need_new_origin_color;
-    bool need_new_dest_color;
-    int nb_orig_colors[NB_DEST_COLORS];
-    int nb_dest_colors[NB_DEST_COLORS];
+    int     colors_cnt;
+    int     max_colors;
+    int     colors[8];
+    bool    need_new_origin_color;
+    bool    need_new_dest_color;
+    int     nb_orig_colors[NB_DEST_COLORS];
+    int     nb_dest_colors[NB_DEST_COLORS];
 } t_logic;
+
+typedef struct s_reccord {
+    int     high_scores[10];
+    bool    music;
+    int     volume;
+    bool    first_launch;
+    bool    alt_fonts;
+}   t_reccord;
 
 typedef struct s_main {
     struct termios original;
-    bool    game_started;
-    int     mouse_x;
-    int     mouse_y;
-    int     mouse_btn;
-    bool    paused;
-    int     game_mode;
-    uint64_t last_update_ui;
-    int     fps;
-    bool    god_mode;
-    bool    game_over;
-    int     volume;
-    bool    music;
-
-    int     board_w;
-    int     board_h;
-    int     screen_w;
-    int     screen_h;
-
-    int     nb_paths;
-
-    int     speed_index;
-    uint16_t game_speed;
-
-    t_player player;
-
-    t_ui    ui;
-
-    t_logic logic;
-
-    t_map_tile   mapt[MAX_H][MAX_W];
+    pid_t       audio_pid;
+    bool        audio_player_started;
+    int         board_w;
+    int         board_h;
+    int         screen_w;
+    int         screen_h;
+    bool        game_started;
+    bool        paused;
+    int         game_mode;
+    bool        god_mode;
+    bool        game_over;
+    int         volume;
+    bool        music;
+    char        *(*cars_charset)[4];
+    int         speed_index;
+    uint16_t    game_speed;
+    
+    int         fps;
+    int         mouse_x;
+    int         mouse_y;
+    int         mouse_btn;
+    uint64_t    last_update_ui;
+    bool        need_path_update;
+    
+    t_reccord   reccord;
+    t_player    player;
+    t_ui        ui;
+    t_logic     logic;
+    
+    t_cars      cars[MAX_CARS];
+    t_map_tile  mapt[MAX_H][MAX_W];
     t_screen_map smap[S_MAP_H][S_MAP_W];    // To store cars positions / reservations
-
-    t_elem  origs[MAX_ORIGS];
-    t_elem  dests[MAX_DESTS];
-    int     nb_origs;
-    int     nb_dests;
-    t_path  paths[MAX_ORIGS][MAX_DESTS][2];   // We can have 50 origins and 50 destinations
+    t_light_list *lights;
+    
+    int         nb_origs;
+    int         nb_dests;
+    t_elem      origs[MAX_ORIGS];
+    t_elem      dests[MAX_DESTS];
+    t_path      paths[MAX_ORIGS][MAX_DESTS][2];   // We can have 50 origins and 50 destinations
                 // Index 0: Chemin des nouvelles voitures
                 // Index 1: Chemin des voitures retournant à l'origine si on a trouve un chemin plus court en index 0
                 //          Il sera supprime lorsque plus aucune voiture ne l'utilise
-    t_pos *tiles_to_be_removed;
-    uint8_t nb_cars_per_origins;
+    t_pos       *tiles_to_be_removed;
+    uint8_t     nb_cars_per_origins;
 
-    t_light_list *lights;
-
-    bool    need_path_update;
-
-    int     chance_new_car;
-    uint64_t last_cars_update;
-    uint64_t last_car_out;
-    uint64_t game_frame;
-    int     nb_cars_out;
-    t_cars  cars[MAX_CARS];
+    int         chance_new_car;
+    uint64_t    last_cars_update;
+    uint64_t    last_car_out;
+    uint64_t    game_frame;
+    int         nb_cars_out;
 } t_main;
 
 // main.c
@@ -220,7 +227,7 @@ int reset_game(t_main *main);
 
 // title_screen.c
 void title_screen(t_main *main);
-void exit_screen();
+void exit_screen(t_main *main);
 
 // init.c
 void reset_dest(t_elem *dest, int index);
@@ -254,13 +261,16 @@ void get_terminal_size(int *w, int *h);
 
 // ui.c
 void map_add_tile(t_main *main, int x, int y, int type);
-void print_dest_infos(t_main *main, t_elem *dest);
+void update_dest_infos(t_main *main, t_elem *dest);
+void update_crossroads(t_main *main, int x, int y);
 void ui_manage_mouse(t_main *main);
 void draw_ui(t_main *main);
 void mapToMousePos(int x, int y, int *mx, int *my);
 void mousePosToMap(int mx, int my, int *x, int *y);
 void update_ui(t_main *main);
 void ui_draw_new_tile(t_main *main, int x, int y);
+void print_game_over(t_main *main);
+void print_help(t_main *main);
 
 // lights.c
 void update_lights(t_main *main);
@@ -273,26 +283,33 @@ int read_input(t_main *main);
 void game_logic_loop(t_main *main);
 void switch_game_to_normal(t_main *main);
 void switch_game_to_sandbox(t_main *main);
+void update_high_scores(t_main *main);
 
 // utils.c
 char **split(const char *str, char delim);
 uint64_t millis();
 int get_random(int max);
 int get_random_range(int min, int max);
+void select_charset(t_main *main);
 
 // music.c
-void init_mpg123();
+void init_mpg123(t_main *main);
 void play_mp3();
 void stop_mp3();
 void kill_audio_process();
 void set_volume(int volume);
 
+// files.c
+int read_reccord_file(t_main *main);
+int write_reccord_file(t_main *main);
+int update_reccord(t_main *main);
+
 // chained.c
-int     orig_add_by_pos(t_main *main, int x, int y, int color);
-int     dest_add_by_pos(t_main *main, int x, int y, int color);
-int     orig_remove_by_pos(t_main *main, int x, int y);
-int     dest_remove_by_pos(t_main *main, int x, int y);
-void    elem_remove_by_index(t_elem *lst, int index);
+int orig_add_by_pos(t_main *main, int x, int y, int color);
+int dest_add_by_pos(t_main *main, int x, int y, int color);
+int orig_remove_by_pos(t_main *main, int x, int y);
+int dest_remove_by_pos(t_main *main, int x, int y);
+void elem_remove_by_index(t_elem *lst, int index);
 
 t_elem *elem_get_by_pos(t_elem *lst, int x, int y);
 t_elem *elem_get_next_active(t_elem *lst, int *index);

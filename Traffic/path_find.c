@@ -259,7 +259,6 @@ void update_paths_old(t_main *main)
         id_orig++;
     }
 
-    main->nb_paths += new_paths;
     // Debug
     // dprtxy(90, 3, "New paths: %d/%d", new_paths, main->nb_paths);
 
@@ -419,7 +418,6 @@ void update_paths(t_main *main)
         id_orig++;
     }
 
-    main->nb_paths += new_paths;
     // Debug
     // dprtxy(90, 3, "New paths: %d/%d", new_paths, main->nb_paths);
 

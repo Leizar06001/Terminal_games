@@ -32,3 +32,47 @@ const int dests_color_index[NB_DEST_COLORS] = {
     C_B_WHITE,
     C_B_BLUE,
 };
+
+
+// Charsets for cars
+char *cars_charset_extended[3][4] = {
+    {
+        "△",
+        "▽",
+        "▷",
+        "◁",
+    },
+    {
+        "⮝",
+        "⮟",
+        "⮞",
+        "⮜",
+    },
+    {
+        "⮙",
+        "⮛",
+        "⮚",
+        "⮘",
+    }
+};
+
+char *cars_charset[3][4] = {
+    {
+        "△",
+        "▽",
+        "▷",
+        "◁",
+    },
+    {
+        "△",
+        "▽",
+        "▷",
+        "◁",
+    },
+    {
+        "△",
+        "▽",
+        "▷",
+        "◁",
+    }
+};

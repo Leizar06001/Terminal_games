@@ -18,7 +18,8 @@ SRCS = 	main.c 		\
 		title_screen.c	\
 		lights.c	\
 		game_logic.c	\
-		music.c
+		music.c		\
+		files.c
 		# debug.c
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
@@ -39,7 +40,7 @@ $(TARGET): $(OBJS)
 	@echo "🔨 Linking $(TARGET) ..."
 	@$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
 
-re: clean all
+re: fclean all
 
 clean:
 	@echo "🧹 Cleaning objects..."
@@ -47,4 +48,5 @@ clean:
 
 fclean: clean	
 	@echo "🧹 Cleaning exe..."
+	@rm -f reccord.txt
 	@rm -f $(TARGET)

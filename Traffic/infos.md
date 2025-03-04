@@ -1,8 +1,4 @@
-# TODO
 
-> Mettre a jour les chemins lors du placement de nouvelles routes pour verifier si l'on aurait créé des chemins plus courts
-> Feux tricolores
-> Mecanique de jeu
 
 # t_path paths[MAX_ORIG][MAX_DEST] >> contient tous les chemins
 La seule chose malloc est [paths.steps]
@@ -20,3 +16,21 @@ On a un pointeur vers la liste des paths utilises par ces points [*origs->paths]
 [.action]   >> 'r' si la tuile est en attente de suppression
 [.*paths]    >> La liste des chemins sur cette tuile
 
+
+# ######################################################################### #
+
+# TODO
+
+> Ameliorer le gameplay
+> Ajouter tile pont/tunnel
+
+# DONE 
+> Certains crossroads ne se mettent pas a jour
+> Mettre un fichier de sauvegarde 
+    high scores
+    afficher help lors de la premiere execution
+    sauvegarde params (fonts, music, ...)
+> Fenetre d'aide
+> Ne pas mettre en bleu quand un crossroad ne peut etre pose
+> Mettre a jour couleur lors de tuile en cours de suppression
+> NE pas placer d'usines si nb maisons < nb usines + 1

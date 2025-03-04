@@ -1,3 +1,6 @@
+#define _XOPEN_SOURCE 700       // For wcwidth
+#define _DEFAULT_SOURCE         // To get usleep back
+
 #include "main.h"
 
 static int count_tokens(const char *str, char delim) {
@@ -61,4 +64,39 @@ int get_random(int max){
 
 int get_random_range(int min, int max){
     return rand() % (max - min + 1) + min;
+}
+
+// FONT TEST
+
+int is_arrow_supported()
+{
+    // Set locale from environment. For most terminals using UTF-8,
+    // you'll want LC_ALL or LANG to be something like en_US.UTF-8.
+    if (!setlocale(LC_ALL, "")) {
+        fprintf(stderr, "Warning: could not set locale from environment.\n");
+        return 0;
+    }
+
+    // The character we want to check
+    wchar_t arrow = L'⮟';
+
+    int width = wcwidth(arrow);
+    // wcwidth() returns:
+    //  -1 if the character is not printable (unrecognized in this locale)
+    //   0 if the character is a zero-width character
+    //   1 or 2 (etc.) if the character takes up space on the screen
+    if (width > 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+void select_charset(t_main *main) {
+    if (main->ui.alt_fonts == 0) {
+        main->cars_charset = cars_charset_extended;
+    } else {
+        main->cars_charset = cars_charset;
+    }
+    main->ui.alt_fonts = !main->ui.alt_fonts;
 }

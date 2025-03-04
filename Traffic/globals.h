@@ -15,6 +15,9 @@ extern bool disable_new_cars;
 
 extern char tiles_en[NB_TILES];
 
+extern char *cars_charset_extended[3][4];
+extern char *cars_charset[3][4];
+
 #define C_RED       0
 #define C_GREEN     1
 #define C_YELLOW    2

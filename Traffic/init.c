@@ -49,6 +49,7 @@ void reset_ui(t_ui *ui){
     ui->infos_prev_x = -1;
     ui->infos_prev_y = -1;
     ui->info_prev_type = 0;
+    ui->show_help = false;
 }
 
 void reset_player(t_player *player){
@@ -136,7 +137,6 @@ int init_main(t_main *main){
     main->screen_w = 0;
     main->screen_h = 0;
     main->game_over = false;
-    main->volume = 100;
     // main->music = false;
 
     // LOGIC
@@ -172,8 +172,6 @@ int init_main(t_main *main){
     main->dests[MAX_DESTS - 1].active = -1; // Last element is the end of the list
 
     // PATHS
-
-    main->nb_paths = 0;
 
     for(int i = 0; i < MAX_ORIGS; i++){
         for(int j = 0; j < MAX_DESTS; j++){

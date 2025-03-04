@@ -12,6 +12,7 @@ const int week_dests[20] = {3, 5, 8, 11, 14, 17, 20, 24, 28, 31, 35, 40, 45, 50}
 void add_new_orig(t_main *main){
     int x, y;
     bool valid = false;
+    int tries = 0;
     do {
         x = get_random(main->board_w);
         y = get_random(main->board_h);
@@ -25,6 +26,8 @@ void add_new_orig(t_main *main){
                 }
             }
         }
+        tries++;
+        if (tries > 100) return;
     } while (!valid);
 
     map_add_tile(main, x, y, TILE_ORIG);
@@ -55,11 +58,13 @@ void add_new_orig(t_main *main){
     int ori_id = orig_add_by_pos(main, x, y, color);
     main->origs[ori_id].color_index = color_index;
     ui_draw_new_tile(main, x, y);
+    update_crossroads(main, x, y);
 }
 
 void add_new_dest(t_main *main){
     int x, y;
     bool valid = false;
+    int tries = 0;
     do {
         x = get_random(main->board_w - 2);
         y = get_random(main->board_h);
@@ -73,6 +78,8 @@ void add_new_dest(t_main *main){
                 }
             }
         }
+        tries++;
+        if (tries > 100) return;
     } while (!valid);
 
     int color_index = -1;
@@ -80,15 +87,17 @@ void add_new_dest(t_main *main){
     if (main->logic.need_new_dest_color){
         color_index = main->logic.colors_cnt;
     } else {
-        for(int i = 0; i <= 10; i++){
+        // We must check if we have enough origins of the same color
+        for(int i = 0; i <= 20; i++){
             color_index = get_random(main->logic.colors_cnt);
-            if (main->logic.nb_dest_colors[color_index] < 2 * main->logic.nb_orig_colors[color_index]){
+            if (main->logic.nb_orig_colors[color_index] >= main->logic.nb_dest_colors[color_index] * 1.7){
                 break;
             }
             if (color_index == -1) return;
         }
+        // We didnt find a color with enough origins
         if (color_index == -1){
-            color_index = get_random(main->logic.colors_cnt);
+            return;
         }
     }
 
@@ -103,6 +112,7 @@ void add_new_dest(t_main *main){
     int dest_id = dest_add_by_pos(main, x, y, color);
     main->dests[dest_id].color_index = color_index;
     ui_draw_new_tile(main, x, y);
+    update_crossroads(main, x, y);
 }
 
 bool request_new_car(t_main *main, t_elem *dest){
@@ -176,7 +186,6 @@ bool request_new_car(t_main *main, t_elem *dest){
         return false;
 
     // Set cooldown to -1
-    stop_logic();
     for(int i = 0; i < NB_CARS_PER_ORIG; i++){
         if (closest_orig->cars_cooldown[i] == 0){
             closest_orig->cars_cooldown[i] = -1;
@@ -238,7 +247,7 @@ void update_dests_timers(t_main *main){
         }
         
         if (must_update_dest_infos){
-            print_dest_infos(main, dest);
+            update_dest_infos(main, dest);
             must_update_dest_infos = false;
         }
 
@@ -380,7 +389,18 @@ void game_logic_loop(t_main *main){
     logic->trig_new_day = false;
 }
 
-
+void update_high_scores(t_main *main){
+    stop_logic();
+    for(int i = 0; i < 10; i++){
+        if (main->player.score > main->reccord.high_scores[i]){
+            for(int j = 9; j >= i; j--){
+                main->reccord.high_scores[j] = main->reccord.high_scores[j - 1];
+            }
+            main->reccord.high_scores[i] = main->player.score;
+            break;
+        }
+    }
+}
 
 void switch_game_to_normal(t_main *main){
     main->game_mode = 1;

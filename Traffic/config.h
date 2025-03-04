@@ -8,6 +8,8 @@
 #define DEFAULT_SPEED   1
 #define UI_UPDATE_DELAY 100     // UI refresh delay in ms
 
+#define MUSIC_VOLUME    50
+
 #define CASH_INITIAL    4000
 #define CASH_PER_CAR    1
 #define CASH_PER_ROAD   40

@@ -188,6 +188,14 @@ int read_input(t_main *main) {
                             stop_mp3();
                         }
                         break;
+                    case 'f':
+                        select_charset(main);
+                        break;
+                    case 'h':
+                        main->ui.show_help = (main->ui.show_help) ? false : true;
+                        main->paused = (main->ui.show_help) ? true : false;
+                        print_help(main);
+                        break;
                 }
 
                 // Only for sandbox mode

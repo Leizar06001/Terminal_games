@@ -46,14 +46,15 @@ void print_title_screen(){
     prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 7,  "║                                                                                                    ║\n");
     prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 8,  "║                                                                                                    ║\n");
     prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 9,  "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 10,  "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 11,  "║      The game has %sMusic%s, to play it you must have %smpg123 installed%s > %ssudo apt install mpg123%s       ║\n", BOLD_HI_MAGENTA, RESET, BOLD_HI_MAGENTA, RESET, BOLD_YELLOW, RESET);
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 12, "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 13, "║                                Press %sENTER%s when you're ready to start...                           ║\n", BOLD_GREEN, RESET);
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 14, "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 15, "║                                  %s https://github.com/Leizar06001 %s                                  ║\n", BOLD_CYAN, RESET);
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 16, "║                                                                                                    ║\n");
-    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 17, "╚════════════════════════════════════════════════════════════════════════════════════════════════════╝\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 10, "║                            If you have %sfont errors%s, press %s'F'%s                                      ║\n", BOLD_RED, RESET, BOLD_CYAN, RESET);
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 11, "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 12, "║      The game has %sMusic%s, to play it you must have %smpg123 installed%s > %ssudo apt install mpg123%s       ║\n", BOLD_HI_MAGENTA, RESET, BOLD_HI_MAGENTA, RESET, BOLD_YELLOW, RESET);
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 13, "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 14, "║                                Press %sENTER%s when you're ready to start...                           ║\n", BOLD_GREEN, RESET);
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 15, "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 16, "║                                  %s https://github.com/Leizar06001 %s                                  ║\n", BOLD_CYAN, RESET);
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 17, "║                                                                                                    ║\n");
+    prtxy(X_TITLE_SCREEN, Y_TITLE_SCREEN + ascii_h + 3 + 18, "╚════════════════════════════════════════════════════════════════════════════════════════════════════╝\n");
 }
 
 void anim_ascii(){
@@ -121,7 +122,7 @@ void title_screen(t_main *main){
     }
 }
 
-void exit_screen(){
+void exit_screen(t_main *main){
     int w, h;
     int Xez[150];
     int yColors[150];
@@ -151,9 +152,9 @@ void exit_screen(){
                 }
             } else {
                 if (y % 2 == 0){
-                    prtxy(Xez[y], y, "%s⮜%s◁ ", colors[yColors[y] + 7], colors[yColors[y]]);
+                    prtxy(Xez[y], y, "%s%s%s◁ ", colors[yColors[y] + 7], main->cars_charset[1][3], colors[yColors[y]]);
                 } else {
-                    prtxy(w - Xez[y], y, " %s▷%s⮞", colors[yColors[y]], colors[yColors[y] + 7]);
+                    prtxy(w - Xez[y], y, " %s▷%s%s", colors[yColors[y]], colors[yColors[y] + 7], main->cars_charset[1][2]);
                 }
             }
             done = false;
@@ -178,5 +179,4 @@ void exit_screen(){
     }
     
     flush_input();
-    usleep(1000000);
 }

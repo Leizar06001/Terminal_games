@@ -1,7 +1,6 @@
 #include "main.h"
-#include <signal.h>
-#include <fcntl.h>
 
+#include <pthread.h>
 
 /* ********************************************************************************************************************** */
 //_____/\\\\\\\\\________/\\\\\\\\\\\__________/\\\\\\\\\_____/\\\\\\\\\_______/\\\\\\\\\_________/\\\\\\\\\\\___         //
@@ -47,42 +46,39 @@ int reset_game(t_main *main){
     return 0;
 }
 
-void print_game_over(t_main *main){
-    static uint64_t last_time = 0;
-    static int color = 0;
+int volume_fadeout = 0;
+const int game_closing_time = 3700;     // ms
 
-    if (millis() - last_time > 800){
-        color++;
+// Thread to lower the volume
+void *fade_out_music(void *arg){
+    usleep(50000);
+    t_main *main = (t_main *)arg;
 
-        // if (color % NB_DEST_COLORS == 0){
-            printf("%s", colors[dests_color_index[color % NB_DEST_COLORS]]);
-        // } else {
-        //     printf("%s", B_YELLOW);
-        // }
-
-        prtxy(main->screen_w / 2 - 15, main->screen_h / 2 - 3, "╔═══════════════════════════════════════════╗");
-        prtxy(main->screen_w / 2 - 15, main->screen_h / 2 - 2, "║                                           ║");
-        prtxy(main->screen_w / 2 - 15, main->screen_h / 2 - 1, "║                 GAME OVER                 ║");
-        prtxy(main->screen_w / 2 - 15, main->screen_h / 2 + 0, "║                                           ║");
-        prtxy(main->screen_w / 2 - 15, main->screen_h / 2 + 1, "║      Press 'r' to retry, ESC to Quit      ║");
-        prtxy(main->screen_w / 2 - 15, main->screen_h / 2 + 2, "║                                           ║");
-        prtxy(main->screen_w / 2 - 15, main->screen_h / 2 + 3, "╚═══════════════════════════════════════════╝");
-
-        printf("%s", RESET);
-
-        last_time = millis();
+    if (volume_fadeout == 0){
+        return NULL;
     }
+    long delay = (game_closing_time / volume_fadeout) * 1000;
+    while (volume_fadeout > 0){
+        set_volume(volume_fadeout--);
+        usleep(delay);
+    }
+    kill_audio_process(main);
+    return NULL;
 }
 
 int main(int argc, char *argv[]) {
     t_main main;
 
-    main.game_started = false;
-    main.game_mode = 1;
-    main.god_mode = false;
-
+    main.game_started         = false;
+    main.game_mode            = 1;
+    main.god_mode             = false;
+    main.audio_pid            = -1;
+    main.audio_player_started = false;
+    main.ui.alt_fonts         = false;
+    
     bool print_infos = true;
-    bool music = true;
+    bool music_en    = true;
+    
     for(int i = 1; i < argc; i++){
         if (strcmp(argv[i], "-i") == 0){
             print_infos = false;
@@ -98,20 +94,28 @@ int main(int argc, char *argv[]) {
             main.god_mode = true;
         }
         if (strcmp(argv[i], "-m") == 0){
-            music = false;
+            music_en = false;
         }
     }
-
+    
     // print_infos = false;
-
+    
     signal(SIGINT, sigint_handler);
     init_terminal(&main);
     disable_mouse_tracking();
-
-    if (music){
-        init_mpg123();
-        main.music = true;
-        play_mp3();
+    
+    // Load the previous parameters
+    read_reccord_file(&main);
+    main.music        = main.reccord.music;
+    main.volume       = main.reccord.volume;
+    main.ui.alt_fonts = main.reccord.alt_fonts;
+    
+    select_charset(&main);
+    
+    if (music_en){
+        init_mpg123(&main);
+        set_volume(main.volume);
+        if (main.music) play_mp3();
     }
 
     if (print_infos){
@@ -150,6 +154,14 @@ int main(int argc, char *argv[]) {
         switch_game_to_normal(&main);
     }
 
+    if (main.reccord.first_launch){
+        main.ui.show_help = true;
+        main.paused = true;
+        print_help(&main);
+    }
+
+    static bool scores_updated = false;
+
     // MAIN LOOP
     while (running) {
 
@@ -157,9 +169,14 @@ int main(int argc, char *argv[]) {
         int ret = read_input(&main);
 
         if (main.game_over) {
+            if (!scores_updated){
+                update_high_scores(&main);
+                scores_updated = true;
+            }
             print_game_over(&main);
             continue;
         }
+        scores_updated = false;
 
         t_input = millis();
         if (ret){
@@ -239,14 +256,29 @@ int main(int argc, char *argv[]) {
         usleep(1000);
     }
 
+    // Save reccord
+    update_reccord(&main);
+    write_reccord_file(&main);
+
     quit_main(&main);
 
-    if (print_infos){
-        exit_screen();
+    // We make a thread to lower the volume while showing the exit screen
+    pthread_t thread;
+    if (music_en && main.audio_player_started){
+        volume_fadeout = main.volume;
+        // Create a thread to lower the volume
+        // pass main as argument
+        pthread_create(&thread, NULL, fade_out_music, &main);
     }
 
-    if (music){
-        kill_audio_process();
+    if (print_infos){
+        exit_screen(&main);
+        usleep(1000000); 
+    }
+
+    if (music_en && main.audio_player_started){
+        kill_audio_process(&main);
+        pthread_join(thread, NULL);
     }
 
     return 0;

@@ -235,7 +235,6 @@ void remove_path_from_all_tiles(t_main *main, t_path *path) {
     }
 
     free_path(path);
-    main->nb_paths--;
     dprtxy(170, 3, "Path len %d removed from %d tiles", path->length, k);
 }
 

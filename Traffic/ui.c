@@ -12,9 +12,16 @@
 #define T_LIGHT_Y   🟡
 #define T_LIGHT_R   🔴
 
+#define NOT_ENOUGH_CASH_COLOR   C_B_MAGENTA
+#define REMOVAL_COLOR           C_RED
+#define AWAITING_RM_COLOR       C_B_BLACK
+
 void stop_ui(){
 
 }
+
+char h_line[512] = "══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════";
+char spaces[512] = "                                                                                                                                ";
 
 // Enable or disable tiles
 char tiles_en[NB_TILES] = {
@@ -66,6 +73,24 @@ const char *tile_dest[5] = {
     "╗   ╔════╝"
 };
 
+int tiles_color[NB_TILES] = {
+    C_B_CYAN,
+    C_B_CYAN,
+    C_B_BLUE,
+    C_B_BLUE,
+    C_B_CYAN,
+    C_B_CYAN,
+};
+
+const int tiles_price[NB_TILES] = {
+    CASH_PER_ROAD,
+    CASH_PER_ROAD,
+    CASH_PER_CROSS,
+    CASH_PER_ROAD,
+    0,
+    0,
+};
+
 const char *dest_bars[DEST_NB_BARS] = {
     "‗__",
     "▄__",
@@ -90,6 +115,26 @@ static const char *days[7] = {
 
 void draw_tile_map(t_main *main, int x, int y, int type, int color);
 
+void draw_one_tile(int mx, int my, int type, const char* color){
+    printf("%s", color);
+    if (type != TILE_DEST){
+        for (int j = 0; j < TILE_H; j++) {
+            if (tiles[type][j] == NULL) {
+                break;
+            }
+            prtxy(mx, my + j, "%s", tiles[type][j]);
+        }
+    } else {
+        for (int j = 0; j < TILE_H; j++) {
+            if (tiles[type][j] == NULL) {
+                break;
+            }
+            prtxy(mx, my + j, "%s", tile_dest[j]);
+        }
+    }
+    printf("%s", RESET);
+}
+
 void map_add_tile(t_main *main, int x, int y, int type){
     if (x < 0 || x >= MAX_W || y < 0 || y >= MAX_H){
         return;
@@ -100,7 +145,7 @@ void map_add_tile(t_main *main, int x, int y, int type){
     }
 }
 
-void draw_tile_ui(int ind, char *color){
+void ui_draw_menu_tile(int ind, const char *color){
     if (ind < 0 || ind >= NB_TILES) {
         return;
     }
@@ -108,19 +153,11 @@ void draw_tile_ui(int ind, char *color){
         return;
     }
     int y = ind * (TILE_H + 2);
-    for (int j = 0; j < TILE_H; j++) {
-        if (tiles[ind][j] == NULL) {
-            break;
-        }
-        if (tiles_en[ind] == 0){
-            prtxy(1, Y_TOP + y + j, "%s%s%s", colors[C_B_BLACK], tiles[ind][j], RESET);
-        } else {
-            prtxy(1, Y_TOP + y + j, "%s%s%s", color, tiles[ind][j], RESET);
-        }
-    }
+    draw_one_tile(1, Y_TOP + y, ind, color);
+
 }
 
-void ui_over(t_main *main) {
+void ui_mouse_over_menu(t_main *main) {
     int tile_over = -1;
     int tile_selected = -1;
     if (main->mouse_x < TILE_W + 1){
@@ -133,7 +170,7 @@ void ui_over(t_main *main) {
 
             // Clear previous over
             if (main->ui.tile_over != tile_over && main->ui.tile_over != -1) {
-                draw_tile_ui(main->ui.tile_over, TILE_COLOR);
+                ui_draw_menu_tile(main->ui.tile_over, colors[tiles_color[main->ui.tile_over]]);
             }
 
             if (main->mouse_btn == 1) { // Select tile
@@ -145,7 +182,7 @@ void ui_over(t_main *main) {
                 // Clear previous selected
                 if (main->ui.tile_selected != -1 && main->ui.tile_selected != tile_selected) {
                     // Clear menu selection
-                    draw_tile_ui(main->ui.tile_selected, TILE_COLOR);
+                    ui_draw_menu_tile(main->ui.tile_selected, colors[tiles_color[main->ui.tile_over]]);
                     // Clear map selection
                     int x = main->ui.mouse_map.x;
                     int y = main->ui.mouse_map.y;
@@ -154,17 +191,17 @@ void ui_over(t_main *main) {
                         draw_tile_map(main, x + 1, y, main->mapt[y][x + 1].type - 1, -1);
                     }
                 }
-                draw_tile_ui(tile_over, SELECTED_COLOR);
+                ui_draw_menu_tile(tile_over, SELECTED_COLOR);
                 main->ui.tile_selected = tile_selected;
                 main->ui.tile_over = -1;
 
             } else if (main->ui.tile_selected != tile_over) {
                 main->ui.tile_over = tile_over;
-                draw_tile_ui(tile_over, OVER_COLOR);
+                ui_draw_menu_tile(tile_over, OVER_COLOR);
             }
         }
     } else if (main->ui.tile_over != -1) {  // Clear over
-        draw_tile_ui(main->ui.tile_over, TILE_COLOR);
+        ui_draw_menu_tile(main->ui.tile_over, colors[tiles_color[main->ui.tile_over]]);
         main->ui.tile_over = -1;
     }
 }
@@ -223,45 +260,32 @@ bool crossroad_can_connect(t_main *main, int x, int y, char location){
 }
 
 
-
-void print_dest_infos(t_main *main, t_elem *dest){
-    (void)main;
-    int mx, my;
-    mapToMousePos(dest->pos.x, dest->pos.y, &mx, &my);
-
+void print_dest_infos(int mx, int my, int nb_bars, int nb_cars){
     // Time left (bar graph)
-    if (dest->nb_bars < 3){
+    if (nb_bars < 3){
         printf("%s", B_GREEN);
-    } else if (dest->nb_bars < 6){
+    } else if (nb_bars < 6){
         printf("%s", B_YELLOW);
     } else {
         printf("%s", B_RED);
     }
-    prtxy(mx + 6, my + 1, dest_bars[dest->nb_bars]);
+    prtxy(mx + 6, my + 1, dest_bars[nb_bars]);
     printf("%s", RESET);
 
     // Cars in    
-    // if (main->game_mode == 0){
     prtxy(mx + 5, my + 2, "    ");
-    prtxy(mx + 5, my + 2, "%.*s", dest->nb_cars_in, "vvvv");
-    if (dest->nb_cars_in > 4){
-        prtxy(mx + 5, my + 2, "%.*s", dest->nb_cars_in - 4, "VVVV");
+    prtxy(mx + 5, my + 2, "%.*s", nb_cars, "vvvv");
+    if (nb_cars > 4){
+        prtxy(mx + 5, my + 2, "%.*s", nb_cars - 4, "VVVV");
     }
-        
-    // } else {
-    //     char cars_info[5] = {0};
-    //     memset(cars_info, ' ', 4);
-    //     for(int i = 0; i < NB_CARS_PER_DEST; i++){
-    //         if (dest->cars_requests[i]){
-    //             if (dest->cars_requests[i]->state == CAR_AT_DEST){
-    //                 cars_info[i] = 'v';
-    //             } else {
-    //                 cars_info[i] = '.';
-    //             }
-    //         }
-    //     }
-    //     prtxy(mx + 5, my + 2, "%s", cars_info);
-    // }
+}
+
+void update_dest_infos(t_main *main, t_elem *dest){
+    (void)main;
+    int mx, my;
+    mapToMousePos(dest->pos.x, dest->pos.y, &mx, &my);
+
+    print_dest_infos(mx, my, dest->nb_bars, dest->nb_cars_in);
 }
 
 void draw_tile_map(t_main *main, int x, int y, int type, int color) {
@@ -274,15 +298,20 @@ void draw_tile_map(t_main *main, int x, int y, int type, int color) {
         return;
     }
 
+    // We want to place a tile but the tile on the map is marked for removal
+    if (color == C_B_WHITE && main->mapt[y][x].action == 'r'){
+        return;
+    }
+
     int mx, my;
     mapToMousePos(x, y, &mx, &my);
     
-    if (color == -1){
-        color = C_B_CYAN; // Cyan
+    if (color == -1){   // Pick assigned color
+        color = tiles_color[type];
 
         // Will be removed ?
         if (main->mapt[y][x].action == 'r') {
-            color = C_B_BLACK;
+            color = AWAITING_RM_COLOR;
 
         } else {
             if (type == TILE_ORIG){
@@ -295,26 +324,14 @@ void draw_tile_map(t_main *main, int x, int y, int type, int color) {
         }
     }
 
-    if (type == TILE_DEST){
-        // More work to do for dests (2 tiles + infos)
-        for (int j = 0; j < TILE_H; j++) {
-            if (tiles[type][j] == NULL) {
-                break;
-            }
-            prtxy(mx, my + j, "%s%s%s", colors[color], tile_dest[j], RESET);
-        }
-
-
-    } else {
-        for (int j = 0; j < TILE_H; j++) {
-            if (tiles[type][j] == NULL) {
-                break;
-            }
-            prtxy(mx, my + j, "%s%s%s", colors[color], tiles[type][j], RESET);
-        }
+    if (color == REMOVAL_COLOR && main->mapt[y][x].action == 'r') {
+        color = AWAITING_RM_COLOR;
     }
-    
-    if (type == TILE_CROS){     // Drawing crossroads depends of connected roads
+
+    draw_one_tile(mx, my, type, colors[color]);
+
+    if (type == TILE_CROS && color != NOT_ENOUGH_CASH_COLOR){     // Drawing crossroads depends of connected roads
+
         char roads[4] = {0, 0, 0, 0};   // W, E, N, S
         char nb_roads = 0;
 
@@ -325,7 +342,7 @@ void draw_tile_map(t_main *main, int x, int y, int type, int color) {
 
         if (nb_roads > 1){  // We only close crossroad if at least 2 roads connected
             // We draw in blue if not overed and not marked for removal
-            if (main->mapt[y][x].action != 'r' && color != C_B_RED) color = C_B_BLUE;
+            if (main->mapt[y][x].action != 'r' && color != REMOVAL_COLOR) color = C_B_BLUE;
 
             prtxy(1, 1, "%s", colors[color]);
 
@@ -365,7 +382,7 @@ void draw_tile_map(t_main *main, int x, int y, int type, int color) {
             prtxy(1, 1, "%s", RESET);
         }
     }
-
+    
     if (main->mapt[y][x].light.enabled){
         draw_light(x, y);
     }
@@ -411,11 +428,11 @@ bool remove_dest(t_main *main, int x, int y){
 
 void update_crossroads(t_main *main, int x, int y){
     // We check if we should update a crossroad for the visual closing
-    if (main->mapt[y][x].type - 1 == TILE_CROS)     draw_tile_map(main, x, y, TILE_CROS, -1);
-    if (y > 1 && main->mapt[y - 1][x].type - 1 == TILE_CROS) draw_tile_map(main, x, y - 1, TILE_CROS, -1);
-    if (main->mapt[y + 1][x].type - 1 == TILE_CROS) draw_tile_map(main, x, y + 1, TILE_CROS, -1);
-    if (x > 1 && main->mapt[y][x - 1].type - 1 == TILE_CROS) draw_tile_map(main, x - 1, y, TILE_CROS, -1);
-    if (main->mapt[y][x + 1].type - 1 == TILE_CROS) draw_tile_map(main, x + 1, y, TILE_CROS, -1);
+    if (main->mapt[y][x].type - 1              == TILE_CROS) draw_tile_map(main, x, y, TILE_CROS, -1);
+    if (y > 0 && main->mapt[y - 1][x].type - 1 == TILE_CROS) draw_tile_map(main, x, y - 1, TILE_CROS, -1);
+    if (main->mapt[y + 1][x].type - 1          == TILE_CROS) draw_tile_map(main, x, y + 1, TILE_CROS, -1);
+    if (x > 0 && main->mapt[y][x - 1].type - 1 == TILE_CROS) draw_tile_map(main, x - 1, y, TILE_CROS, -1);
+    if (main->mapt[y][x + 1].type - 1          == TILE_CROS) draw_tile_map(main, x + 1, y, TILE_CROS, -1);
 }
 
 void refund_player(t_main *main, int type){
@@ -534,13 +551,14 @@ void place_tile(t_main *main) {
                     main->need_path_update = true;
                     dprtxy(1, 52, "Removed tile at %d, %d", x, y);
                 } else {
+                    draw_tile_map(main, x, y, type, REMOVAL_COLOR);
                     dprtxy(1, 52, "Can't remove tile at %d, %d", x, y);
                 }
             }
         }
 
     } else if (main->mouse_btn == DESELECT_BTN) {   // DESELECT TILE
-        draw_tile_ui(ui->tile_selected, TILE_COLOR);
+        ui_draw_menu_tile(ui->tile_selected, TILE_COLOR);
         draw_tile_map(main, x, y, main->mapt[y][x].type - 1, -1);
         ui->tile_selected = -1;
     }
@@ -575,7 +593,7 @@ void place_tile(t_main *main) {
                             cash_needed = CASH_PER_CROSS;
                         }
                         if (main->player.cash < cash_needed){
-                            draw_tile_map(main, x, y, ui->tile_selected, C_B_MAGENTA);
+                            draw_tile_map(main, x, y, ui->tile_selected, NOT_ENOUGH_CASH_COLOR);
                         } else {
                             draw_tile_map(main, x, y, ui->tile_selected, C_B_WHITE);
                         }
@@ -589,7 +607,7 @@ void place_tile(t_main *main) {
                 
             } else {
                 // If we are over a placed tile, we draw it in red
-                draw_tile_map(main, x, y, main->mapt[y][x].type - 1, C_B_RED);
+                draw_tile_map(main, x, y, main->mapt[y][x].type - 1, REMOVAL_COLOR);
             }
         }
     }
@@ -640,22 +658,22 @@ void check_tiles_to_be_removed(t_main *main) {
 
         // Remove the tile from the list to be removed
         remove_tile_from_remove_list(main, x, y);
-        // Remove the tile
+
+        // Clear maps
         main->mapt[y][x].type = 0;
-        clear_tile_map(x, y);
-        // Update crossroads
-        update_crossroads(main, x, y);
-        // Clear over map
         main->mapt[y][x].action = 0;
 
-        main->need_path_update = true;
-        
-    }
-    if (main->tiles_to_be_removed || main->need_path_update){
-        while (nb_tiles < 30){
-            dprtxy(150, 21 + nb_tiles, "                                       ");
-            nb_tiles++;
+        // Remove the tile or draw the tile mouse is placing
+        if (main->ui.mouse_map.x == x && main->ui.mouse_map.y == y){
+            draw_tile_map(main, x, y, main->ui.tile_selected, C_B_WHITE);
+        } else {
+            clear_tile_map(x, y);
         }
+
+        // Update crossroads
+        update_crossroads(main, x, y);
+
+        main->need_path_update = true;
     }
 }
 
@@ -680,8 +698,8 @@ void ui_mouse_wheel(t_main *main){
     }
     // Update changes
     if (prev_selected != main->ui.tile_selected){
-        draw_tile_ui(prev_selected, TILE_COLOR);
-        draw_tile_ui(main->ui.tile_selected, SELECTED_COLOR);
+        ui_draw_menu_tile(prev_selected, TILE_COLOR);
+        ui_draw_menu_tile(main->ui.tile_selected, SELECTED_COLOR);
         draw_tile_map(main, main->ui.mouse_map.x, main->ui.mouse_map.y, main->ui.tile_selected, C_B_WHITE);
         if (prev_selected == TILE_DEST){
             draw_tile_map(main, main->ui.mouse_map.x + 1, main->ui.mouse_map.y, 
@@ -691,8 +709,11 @@ void ui_mouse_wheel(t_main *main){
 }
 
 void ui_manage_mouse(t_main *main) {
+    if (main->ui.show_help){
+        return;
+    }
     ui_mouse_wheel(main);
-    ui_over(main);
+    ui_mouse_over_menu(main);
     place_tile(main);
 }
 
@@ -751,14 +772,33 @@ void draw_rotating_week_clock(t_main *main){
     }
 }
 
+void check_cash(t_main *main){
+    static bool prev_cannot_buy = 0;
+
+    if (prev_cannot_buy == 0){
+        if (main->player.cash < tiles_price[main->ui.tile_selected]){
+            draw_tile_map(main, main->ui.mouse_map.x, main->ui.mouse_map.y, main->ui.tile_selected, NOT_ENOUGH_CASH_COLOR);
+            prev_cannot_buy = 1;
+        }
+    } else {
+        if (main->player.cash >= tiles_price[main->ui.tile_selected]){
+            draw_tile_map(main, main->ui.mouse_map.x, main->ui.mouse_map.y, main->ui.tile_selected, tiles_color[main->ui.tile_selected]);
+            prev_cannot_buy = 0;
+        }
+    }
+}
+
 void update_ui(t_main *main) {
     uint64_t now = millis();
-
-    check_tiles_to_be_removed(main);
 
     if (now - main->last_update_ui < UI_UPDATE_DELAY) {
         return;
     }
+
+    check_tiles_to_be_removed(main);
+    check_cash(main);
+
+    int center = main->screen_w / 2;
 
     // Positions
     if (prt_debug){
@@ -774,8 +814,11 @@ void update_ui(t_main *main) {
 
     prtxy(35, 1, "%s1 2 3 4: %sSpeed ( %s%d%s )  ", B_YELLOW, YELLOW, B_YELLOW, main->speed_index + 1, YELLOW);
     prtxy(35, 2, "%sSpace  : %sPause (%s%s%s)  ", B_YELLOW, YELLOW,(main->paused) ? B_RED: B_GREEN, (main->paused) ? "STOP" : "RUN", YELLOW);
-    prtxy(35, 3, "%s+ / -  : %sMusic volume (%s%d%s)  ", B_YELLOW, YELLOW, B_GREEN, main->volume, YELLOW);
-    prtxy(35, 4, "%sM      : %sMusic (%s%s%s)  ", B_YELLOW, YELLOW, (main->music) ? B_GREEN : B_RED, (main->music) ? "ON" : "OFF", YELLOW);
+    prtxy(35, 4, "%s   H   : %sHelp", B_YELLOW, YELLOW);
+    
+    prtxy(center + 35, 1, "%s+ / - : %sMusic volume (%s%d%s)  ", B_YELLOW, YELLOW, B_GREEN, main->volume, YELLOW);
+    prtxy(center + 35, 2, "%s  M   : %sMusic (%s%s%s)  ", B_YELLOW, YELLOW, (main->music) ? B_GREEN : B_RED, (main->music) ? "ON" : "OFF", YELLOW);
+    prtxy(center + 35, 3, "%s  F   : %sChange Font", B_YELLOW, YELLOW);
 
     if (main->game_mode == 0){
         prtxy(35, 3, "c    : New cars (%s)  ", (disable_new_cars) ? "OFF" : "ON");
@@ -810,7 +853,7 @@ void update_ui(t_main *main) {
         draw_rotating_week_clock(main);
         
         // #### Informations
-        int center = main->screen_w / 2;
+        
         int x_left = center - 22;
 
         x_left += 2;
@@ -902,88 +945,6 @@ void update_ui(t_main *main) {
         }
     }
 
-    // static int deb_last_map_x = -1;
-    // static int deb_last_map_y = -1;
-    // static char deb_last_type = 0;
-    // const int debug_x = 195;
-    // const int debug_y = Y_TOP + 3;
-    // const int debug_h = 50;
-    // if (prt_debug) {
-    //     if (main->ui.mouse_map.x != deb_last_map_x || main->ui.mouse_map.y != deb_last_map_y) {
-    //         deb_last_map_x = main->ui.mouse_map.x;
-    //         deb_last_map_y = main->ui.mouse_map.y;
-            
-    //         // Get information about the tile the mouse is over
-    //         if (main->ui.mouse_map.x >= 0 && main->ui.mouse_map.y >= 0 && main->ui.mouse_map.x < MAX_W && main->ui.mouse_map.y < MAX_H) {
-    //             int x = main->ui.mouse_map.x;
-    //             int y = main->ui.mouse_map.y;
-    //             char type = main->mapt[y][x].type;
-    //             t_elem *elem;
-
-    //             // Print a box
-    //             if (type != 0){
-    //                 prtxy(debug_x, debug_y, "┌─────────────────────────────────────┐");
-    //                 for(int i = 1; i < debug_h - 1; i++){
-    //                     prtxy(debug_x, debug_y + i, "│                                     │");
-    //                 }
-    //                 prtxy(debug_x, debug_y + debug_h - 1, "└─────────────────────────────────────┘");
-    //             }
-
-    //             switch (type){
-    //                 case 0:     // Empty
-    //                     if (deb_last_type != 0){
-    //                         for(int i = 0; i < debug_h; i++){
-    //                             prtxy(debug_x, debug_y + i, "                                       ");
-    //                         }
-    //                     }
-    //                     break;
-
-    //                 case 1:     // Vertical
-    //                 case 2:     // Horizontal
-    //                 case 3:     // Crossroad
-    //                     prtxy(debug_x + 2, debug_y + 1, "Tile       %s ", (type == 1) ? "Vert  " : (type == 2) ? "Horiz " : "Cross ");
-    //                     prtxy(debug_x + 2, debug_y + 2, "X: %d, Y: %d   ", x, y);
-
-    //                     // On recupere les infos de chaque paths de cette tile
-    //                     int nb_paths = path_count_in_list(main->mapt[y][x].paths);
-    //                     prtxy(debug_x + 2, debug_y + 3, "Nb paths:  %d  ", nb_paths);
-    //                     t_tile_paths *tps = main->mapt[y][x].paths;
-    //                     int i = 0;
-    //                     while (tps){
-    //                         if (tps->path){
-    //                             prtxy(debug_x + 2, debug_y + 4 + i, "%c%d, %d to %d, len: %d, en: %d, cars: %d", 
-    //                                 (main->mapt[y][x].action == 'r') ? 'X' : '#', i, tps->path->orig->index, tps->path->dest->index,
-    //                                 tps->path->length, tps->path->active, tps->path->nb_cars_using);
-    //                             t_path *old = &main->paths[tps->path->orig->index][tps->path->dest->index][1];
-    //                             if (old->steps){
-    //                                 prtxy(debug_x + 2, debug_y + 5 + i, "OLD: len %d, cars %d", 
-    //                                     old->length, 
-    //                                     old->nb_cars_using);
-    //                             }
-    //                             i++;
-    //                         }
-    //                         tps = tps->next;
-    //                     }
-    //                     break;
-
-    //                 case 4:     // Origin
-    //                     elem = elem_get_by_pos(main->origs, x, y);
-    //                     if (elem == NULL) break;
-
-    //                     break;
-
-    //                 case 5:     // Destination
-    //                     elem = elem_get_by_pos(main->dests, x, y);
-    //                     if (elem == NULL) break;
-
-    //                     break;
-    //             }
-    //             deb_last_type = type;
-
-    //         }
-    //     }
-    // }
-
     main->last_update_ui = now;
 }
 
@@ -1024,20 +985,132 @@ void draw_ui(t_main *main) {
         }
 
         // Draw tiles
-        draw_tile_ui(i, TILE_COLOR);
+        ui_draw_menu_tile(i, colors[tiles_color[i]]);
         printf("%s", ui_color);
     }
 
     draw_frame(main);
 
-    // int center = main->screen_w / 2;
-    // int x_left = center - 22;
-    // prtxy(x_left, 1,      "%s╔%s╔═══════════════════════════════════════╗%s╗", YELLOW, B_YELLOW, YELLOW);
-    // prtxy(x_left, 2,      "%s║%s║                                       ║%s║", YELLOW, B_YELLOW, YELLOW); 
-    // prtxy(x_left, 3,      "%s║%s║                                       ║%s║", YELLOW, B_YELLOW, YELLOW); 
-    // prtxy(x_left, 4,      "%s║%s║              ╔═       ═╗              ║%s║", YELLOW, B_YELLOW, YELLOW); 
-    // prtxy(x_left - 1, 5, " %s╚%s╚══════════════╩═════════╩══════════════╝%s╝ ", YELLOW, B_YELLOW, YELLOW);
-
     printf("%s", RESET);
 }
 
+void print_game_over(t_main *main){
+    static uint64_t last_time = 0;
+    static int color = 0;
+
+    if (millis() - last_time > 800){
+        color++;
+
+        printf("%s", colors[dests_color_index[color % NB_DEST_COLORS]]);
+
+        int x = main->screen_w / 2 - 15;
+        int y = main->screen_h / 2;
+        prtxy(x, y - 7, "╔═══════════════════════════════════════════╗");
+        prtxy(x, y - 6, "║                                           ║");
+        prtxy(x, y - 5, "║                 GAME OVER                 ║");
+        prtxy(x, y - 4, "║                                           ║");
+        prtxy(x, y - 3, "║      Press 'r' to retry, ESC to Quit      ║");
+        prtxy(x, y - 2, "║                                           ║");
+        prtxy(x, y - 1, "║                                           ║");
+        prtxy(x, y + 0, "║          .*.*  HIGH SCORES  *.*.          ║");
+        prtxy(x, y + 1, "║                                           ║");
+        prtxy(x, y + 2, "║                1:                         ║");
+        prtxy(x, y + 3, "║                2:                         ║");
+        prtxy(x, y + 4, "║                3:                         ║");
+        prtxy(x, y + 5, "║                4:                         ║");
+        prtxy(x, y + 6, "║                5:                         ║");
+        prtxy(x, y + 7, "║                                           ║");
+        prtxy(x, y + 8, "╚═══════════════════════════════════════════╝");
+
+        for(int i = 0; i < 5; i++){
+            prtxy(x + 20, y + 2 + i, "%03ld %03ld", main->reccord.high_scores[i] / 1000, main->reccord.high_scores[i] % 1000);
+            if (main->player.score == main->reccord.high_scores[i]){
+                prtxy(x + 15, y + 2 + i, ">");
+                prtxy(x + 28, y + 2 + i, "<");
+            }
+        }
+
+        printf("%s", RESET);
+
+        last_time = millis();
+    }
+}
+
+void print_help(t_main *main){
+    int w = 100;
+    int h = 36;
+    int x = (main->screen_w - w) / 2;
+    int y = (main->screen_h - h) / 2;
+
+    if (y < Y_TOP + 1) y = Y_TOP + 1;
+
+    printf("%s", B_YELLOW);
+
+    if (main->ui.show_help){
+        prtxy(x, y, "╔%.*s╗", (w - 2) * 3, h_line);
+        for(int i = 1; i < h - 1; i++){
+            prtxy(x, y + i, "║%.*s║", w - 2, spaces);
+        }
+        prtxy(x, y + h - 1, "╚%.*s╝", (w - 2) * 3, h_line);
+
+        // Tiles 
+        prtxy(x + (w - 17) / 2, y + 2, "%sWELCOME TO ASCARS", B_YELLOW);
+        prtxy(x + (w - 85) / 2, y + 4, "%sThe goal of this game is to allow cars to travel from houses to factories using roads", YELLOW);
+
+        draw_one_tile(x + 15, y + 6,    TILE_HORI, colors[tiles_color[TILE_HORI]]);
+        draw_one_tile(x + 35, y + 6,    TILE_VERT, colors[tiles_color[TILE_VERT]]);
+        draw_one_tile(x + 70, y + 6,    TILE_CROS, colors[tiles_color[TILE_CROS]]);
+
+        printf("%s", YELLOW);
+        prtxy(x + 10, y + 11, "Those are %sregular roads%s | Cost %s%d%s $", B_YELLOW, YELLOW, B_YELLOW, CASH_PER_ROAD, YELLOW);
+        prtxy(x + 4, y + 12, "They can be placed horizontally or vertically");
+
+        prtxy(x + 57, y + 11, "This is a %scrossroad%s | Cost %s%d%s $", B_YELLOW, YELLOW, B_YELLOW, CASH_PER_CROSS, YELLOW);
+        prtxy(x + 59, y + 12, "Cars can go in any direction");
+        prtxy(x + 53, y + 13, "But it takes %smore time%s for them to travel", B_YELLOW, YELLOW);
+        
+        // Origins and Destinations
+        draw_one_tile(x + 10, y + 15,   TILE_ORIG, B_GREEN);
+        printf("%s", YELLOW);
+        prtxy(x + 17, y + 15, "This is a %shouse%s", B_YELLOW, YELLOW);
+        prtxy(x + 17, y + 16, "Cars will spawn here");
+        prtxy(x + 17, y + 17, "There is a limit of %s%d cars%s per house", B_YELLOW, NB_CARS_PER_ORIG, YELLOW);
+
+        draw_one_tile(x + 6, y + 20,   TILE_DEST, B_GREEN);
+        printf("%s", YELLOW);
+        prtxy(x + 17, y + 20, "This is a %sfactory%s", B_YELLOW, YELLOW);
+        prtxy(x + 17, y + 21, "Cars will have to go here");
+        prtxy(x + 17, y + 22, "There is a limit of %s%d cars%s per factory", B_YELLOW, NB_CARS_PER_DEST, YELLOW);
+        prtxy(x + 17, y + 23, "Factories must be connected to houses of the %ssame color%s", B_YELLOW, YELLOW);
+
+        draw_one_tile(x + 6, y + 25,   TILE_DEST, B_BLACK);
+        print_dest_infos(x + 6, y + 25, 3, 3);
+        printf("%s", YELLOW);
+        prtxy(x + 17, y + 25, "Number of cars inside is shown by %sv%s = 1 car, %sV%s = 2 cars", B_YELLOW, YELLOW, B_YELLOW, YELLOW);
+        prtxy(x + 17, y + 27, "The %sbar graph%s represent the factory's %sdemand%s for cars", B_YELLOW, YELLOW, B_YELLOW, YELLOW);
+        prtxy(x + 17, y + 28, "%sIf the bar fills up in %sred%s, you will %sloose !", YELLOW, B_RED, YELLOW, B_RED);
+
+        prtxy(x + 7, y + 31, "%sAll available %sinformations%s and %skeys%s are shown on the top. Press %sH%s to hide this help", YELLOW, B_YELLOW, YELLOW, B_YELLOW, YELLOW, B_YELLOW, YELLOW);
+
+        prtxy(x + (w - 11) / 2, y + 33, "%sGOOD LUCK !", B_YELLOW);
+
+
+    } else {
+        int tx_left, tx_right, ty_top, ty_bottom;
+        mousePosToMap(x, y, &tx_left, &ty_top);
+        mousePosToMap(x + w, y + h, &tx_right, &ty_bottom);
+
+        // Clear
+        for(int i = 0; i < h; i++){
+            prtxy(x, y + i, "%.*s", w, spaces);
+        }
+        // Draw the map
+        for(int i = ty_top - 1; i <= ty_bottom + 1; i++){
+            for(int j = tx_left - 1; j <= tx_right + 1; j++){
+                draw_tile_map(main, j, i, main->mapt[i][j].type - 1, -1);
+            }
+        }
+
+    }
+
+}
