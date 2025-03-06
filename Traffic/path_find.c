@@ -44,16 +44,24 @@ static bool isValidTransition(int currentTile, int nextTile, int dx, int dy)
     // 1 = vertical => ne peut bouger que haut/bas
     if (currentTile == MAP_TILE_VERT) {
         // dx=0, dy=-1 (haut) ou dy=1 (bas)
-        if (dx == 0 && (dy == -1 || dy == 1)) {
-            // next doit être 1 ou 3
-            return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS);
+        if (dx == 0) {
+            // next doit être 1 ou 3 ou tunnel
+            if (dy == -1){
+                return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_S);
+            } else if (dy == 1){
+                return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_N);
+            }
         }
         return false;
     }
     // 2 = horizontal => ne peut bouger que gauche/droite
     if (currentTile == MAP_TILE_HORI) {
-        if (dy == 0 && (dx == -1 || dx == 1)) {
-            return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS);
+        if (dy == 0) {
+            if (dx == -1){
+                return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_E);
+            } else if (dx == 1){
+                return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_W);
+            }
         }
         return false;
     }
@@ -61,10 +69,46 @@ static bool isValidTransition(int currentTile, int nextTile, int dx, int dy)
     //   - si on va haut/bas => la case suivante doit être 1 ou 3
     //   - si on va gauche/droite => la case suivante doit être 2 ou 3
     if (currentTile == MAP_TILE_CROS) {
-        if (dx == 0 && (dy == -1 || dy == 1)) {
+        if (dx == 0) {
+            if (dy == -1){
+                return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_S);
+            } else if (dy == 1){
+                return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_N);
+            }
+        }
+        else if (dy == 0) {
+            if (dx == -1){
+                return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_E);
+            } else if (dx == 1){
+                return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS || nextTile == MAP_TILE_TUNNEL_W);
+            }
+        }
+        return false;
+    }
+
+    if (currentTile == MAP_TILE_TUNNEL_S){
+        if (dx == 0 && dy == 1){
             return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS);
         }
-        else if (dy == 0 && (dx == -1 || dx == 1)) {
+        return false;
+    }
+
+    if (currentTile == MAP_TILE_TUNNEL_N){
+        if (dx == 0 && dy == -1){
+            return (nextTile == MAP_TILE_VERT || nextTile == MAP_TILE_CROS);
+        }
+        return false;
+    }
+
+    if (currentTile == MAP_TILE_TUNNEL_E){
+        if (dx == 1 && dy == 0){
+            return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS);
+        }
+        return false;
+    }
+
+    if (currentTile == MAP_TILE_TUNNEL_W){
+        if (dx == -1 && dy == 0){
             return (nextTile == MAP_TILE_HORI || nextTile == MAP_TILE_CROS);
         }
         return false;
@@ -73,12 +117,16 @@ static bool isValidTransition(int currentTile, int nextTile, int dx, int dy)
     return false; // 0 = bloqué
 }
 
+bool isTunnelEntrance(int type){
+    return type >= MAP_TILE_TUNNEL_S && type <= MAP_TILE_TUNNEL_W;
+}
+
 /**
  * BFS global "une seule fois" depuis l'origine (xOrig,yOrig).
  *   - Remplit `visited[y][x]` et `parent[y][x]` pour TOUTE la grille.
  *   - Ne s'arrête pas dès qu'on trouve une destination ; on explore tout.
  */
-void bfsFromOrigin(t_map_tile mapt[MAX_H][MAX_W],
+void bfsFromOrigin(t_main *main, t_map_tile mapt[MAX_H][MAX_W],
                    int mapH, int mapW,
                    int xOrig, int yOrig,
                    bool visited[MAX_H][MAX_W],
@@ -150,6 +198,36 @@ void bfsFromOrigin(t_map_tile mapt[MAX_H][MAX_W],
                 }
             }
         }
+
+        // 2) Puis, si c'est une entrée de tunnel, on "saute" directement
+        //    à l'autre extrémité en l'ajoutant dans la file BFS.
+        if (isTunnelEntrance(mapt[cy][cx].type)) {
+            // Supposons qu'on retrouve la case "paire" (pairedX, pairedY)
+            // en cherchant dans un tableau/structure qui décrit les paires.
+            int tunnel_id = mapt[cy][cx].tunnel_id;
+            int pairedX, pairedY;
+            int x0 = main->tunnels[tunnel_id].x[0];
+            int y0 = main->tunnels[tunnel_id].y[0];
+            int x1 = main->tunnels[tunnel_id].x[1];
+            int y1 = main->tunnels[tunnel_id].y[1];
+
+            if (cx == x0 && cy == y0) {
+                pairedX = x1;
+                pairedY = y1;
+            } else {
+                pairedX = x0;
+                pairedY = y0;
+            }
+
+            if (!visited[pairedY][pairedX]) {
+                visited[pairedY][pairedX] = true;
+                parent[pairedY][pairedX].x = cx;
+                parent[pairedY][pairedX].y = cy;
+                queue[back].x = pairedX;
+                queue[back].y = pairedY;
+                back++;
+            }
+        }
     }
 }
 
@@ -187,83 +265,6 @@ int reconstructPath(int xDest, int yDest,
     }
 
     return length;
-}
-
-void update_paths_old(t_main *main)
-{
-    if (main->need_path_update == false){
-        return;
-    }
-
-    // On parcourt toutes les origines actives
-    int id_orig = 0;
-    t_elem *orig = NULL;
-
-    int new_paths = 0;
-
-    while ((orig = elem_get_next_active(main->origs, &id_orig)) != NULL) {
-        // Prépare les tableaux BFS
-        static bool visited[MAX_H][MAX_W];
-        static t_pos parent[MAX_H][MAX_W];
-
-        // Lance le BFS depuis cette origine
-        bfsFromOrigin(main->mapt, MAX_H, MAX_W,
-                      orig->pos.x, orig->pos.y,
-                      visited, parent);
-
-        // Maintenant, on parcourt toutes les destinations
-        int id_dest = 0;
-        t_elem *dest = NULL;
-
-        while ((dest = elem_get_next_active(main->dests, &id_dest)) != NULL) {
-            // Vérifie si on n'a pas déjà de chemin
-            t_path *pinfo = &main->paths[orig->index][dest->index][0];
-            if (pinfo->steps == NULL) { 
-                // => aucun chemin stocké pour ce O->D
-                // => Vérifie si BFS a atteint la destination
-                if (visited[dest->pos.y][dest->pos.x]) {
-                    // On reconstruit le chemin
-                    t_pos bufferPath[MAX_W * MAX_H];
-                    int len = reconstructPath(dest->pos.x, dest->pos.y, parent, bufferPath);
-
-                    // On peut imposer une taille mini (par ex. >=3)
-                    if (len >= 2) {
-                        // Alloue
-                        t_pos *allocatedPath = malloc(len * sizeof(t_pos));
-                        if (allocatedPath) {
-                            memcpy(allocatedPath, bufferPath, len * sizeof(t_pos));
-
-                            // Remplir pinfo
-                            pinfo->steps  = allocatedPath;
-                            pinfo->length = len;
-                            pinfo->active = true;
-                            pinfo->nb_cars_using = 0;
-                            pinfo->orig = orig;
-                            pinfo->dest = dest;
-
-                            // Mise à jour
-                            orig->nb_paths++;
-                            dest->nb_paths++;
-
-                            path_add_to_list(&orig->paths, pinfo);
-                            path_add_to_map(main, pinfo);
-
-                            new_paths++;
-                        }
-                    }
-                }
-            }
-            id_dest++;
-        }
-
-        id_orig++;
-    }
-
-    // Debug
-    // dprtxy(90, 3, "New paths: %d/%d", new_paths, main->nb_paths);
-
-    // On considère qu'on a fini le recalcul complet des chemins
-    main->need_path_update = false;
 }
 
 void swap_paths(t_path *p1, t_path *p2)
@@ -324,7 +325,7 @@ void update_paths(t_main *main)
         static t_pos parent[MAX_H][MAX_W];
 
         // Lance le BFS depuis cette origine
-        bfsFromOrigin(main->mapt, MAX_H, MAX_W,
+        bfsFromOrigin(main, main->mapt, MAX_H, MAX_W,
                       orig->pos.x, orig->pos.y,
                       visited, parent);
 

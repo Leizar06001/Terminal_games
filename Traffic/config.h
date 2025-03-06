@@ -10,10 +10,11 @@
 
 #define MUSIC_VOLUME    50
 
-#define CASH_INITIAL    4000
+#define CASH_INITIAL    7000
 #define CASH_PER_CAR    1
-#define CASH_PER_ROAD   40
-#define CASH_PER_CROSS  60
+#define CASH_PER_ROAD   60
+#define CASH_PER_CROSS  80
+#define CASH_PER_TUNNEL 1800
 
 #define SCORE_PER_CAR   1
 
@@ -25,6 +26,7 @@
 #define NB_CARS_PER_ORIG    4
 #define MAX_CARS_PER_ORIG   9
 #define NB_CARS_PER_DEST    8
+#define MAX_TUNNELS         5
 
 #define MAX_CARS MAX_ORIGS * MAX_CARS_PER_ORIG
 

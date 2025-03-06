@@ -29,9 +29,7 @@ void add_new_orig(t_main *main){
         tries++;
         if (tries > 100) return;
     } while (!valid);
-
-    map_add_tile(main, x, y, TILE_ORIG);
-
+    
     int color_index = -1;
     int color;
     if (main->logic.need_new_origin_color){
@@ -54,10 +52,10 @@ void add_new_orig(t_main *main){
     
     main->logic.need_new_origin_color = false;
     main->logic.nb_orig_colors[color_index]++;
-
+    
     int ori_id = orig_add_by_pos(main, x, y, color);
     main->origs[ori_id].color_index = color_index;
-    ui_draw_new_tile(main, x, y);
+    map_add_tile(main, x, y, TILE_ORIG);
     update_crossroads(main, x, y);
 }
 
@@ -70,7 +68,7 @@ void add_new_dest(t_main *main){
         y = get_random(main->board_h);
         // We dont want to be right beside an origin
         if (main->mapt[y][x].type == 0 && main->mapt[y][x + 1].type == 0){
-            if (main->mapt[y][x + 1].type != TILE_ORIG + 1){
+            if (main->mapt[y][x - 1].type != TILE_ORIG + 1){
                 if (main->mapt[y + 1][x].type != TILE_ORIG + 1){
                     if (y <= 1 || main->mapt[y - 1][x].type != TILE_ORIG + 1){
                         valid = true;
@@ -84,16 +82,20 @@ void add_new_dest(t_main *main){
 
     int color_index = -1;
     int color;
+
     if (main->logic.need_new_dest_color){
+        // We need a dest of the new color
         color_index = main->logic.colors_cnt;
+
     } else {
+        // We pick a random color
         // We must check if we have enough origins of the same color
         for(int i = 0; i <= 20; i++){
-            color_index = get_random(main->logic.colors_cnt);
-            if (main->logic.nb_orig_colors[color_index] >= main->logic.nb_dest_colors[color_index] * 1.7){
+            int rnd_color = get_random(main->logic.colors_cnt);
+            if (main->logic.nb_orig_colors[rnd_color] >= main->logic.nb_dest_colors[rnd_color] * 1.7){
+                color_index = rnd_color;
                 break;
             }
-            if (color_index == -1) return;
         }
         // We didnt find a color with enough origins
         if (color_index == -1){
@@ -101,17 +103,14 @@ void add_new_dest(t_main *main){
         }
     }
 
-    map_add_tile(main, x, y, TILE_DEST);
-
     color = main->logic.colors[color_index];
-
+    
     main->logic.need_new_dest_color = false;
-
     main->logic.nb_dest_colors[color_index]++;
-
+    
     int dest_id = dest_add_by_pos(main, x, y, color);
     main->dests[dest_id].color_index = color_index;
-    ui_draw_new_tile(main, x, y);
+    map_add_tile(main, x, y, TILE_DEST);
     update_crossroads(main, x, y);
 }
 
@@ -247,7 +246,7 @@ void update_dests_timers(t_main *main){
         }
         
         if (must_update_dest_infos){
-            update_dest_infos(main, dest);
+            update_dest_infos(dest);
             must_update_dest_infos = false;
         }
 
@@ -339,20 +338,6 @@ void game_logic_loop(t_main *main){
             prtxy(180, 2, "D|  %02d |  %02d |  %02d |  %02d |  %02d |  %02d |", logic->nb_dest_colors[0], logic->nb_dest_colors[1], logic->nb_dest_colors[2],
                                         logic->nb_dest_colors[3], logic->nb_dest_colors[4], logic->nb_dest_colors[5]);
         }
-
-        int extra_time = DEST_EXTRA_TIME_PER_CAR;
-        for(int col = 0; col < NB_DEST_COLORS; col++){
-            if (logic->nb_orig_colors[col] == 0) continue;
-            float ratio = (float)main->logic.nb_dest_colors[col] / (float)main->logic.nb_orig_colors[col];
-            ratio += 0.3;
-            if (ratio < 0.4) ratio = 0.4;
-            else if (ratio > 1.4) ratio = 1.4;
-            extra_time = DEST_EXTRA_TIME_PER_CAR * ratio;
-
-            dprtxy(181 + col * 6, 3, "|%.2f", ratio);
-            dprtxy(181 + col * 6, 4, "| %02d", extra_time);
-        }
-        // **************************************************** FOR DEBUG 
         
         // Add new origin
         if (main->nb_origs < MAX_ORIGS){
@@ -379,9 +364,6 @@ void game_logic_loop(t_main *main){
                 }
             }
         }
-
-        
-
     }
     
     logic->trig_new_hour = false;

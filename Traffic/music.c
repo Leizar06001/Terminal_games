@@ -3,6 +3,8 @@
 #include <fcntl.h>
 
 #include <sys/wait.h>
+#include <errno.h>
+
 
 // Variable globale pour stocker le PID du processus enfant
 int control_pipe[2];
@@ -62,6 +64,7 @@ void init_mpg123(t_main *main) {
         perror("pipe failed");
         exit(1);
     }
+    fcntl(status_pipe[0], F_SETFL, O_NONBLOCK);
 
     pid_t pid = fork();
 
@@ -87,7 +90,7 @@ void init_mpg123(t_main *main) {
         close(status_pipe[0]);
         close(status_pipe[1]);
 
-        execlp("mpg123", "mpg123", "-R", NULL);
+        execlp("mpg123", "mpg123", "-R", "--quiet", NULL);
 
         perror("exec failed");
         // exit(1);
@@ -97,6 +100,7 @@ void init_mpg123(t_main *main) {
     audio_pid = pid;
     close(control_pipe[0]); // Parent writes, so close read end
     close(status_pipe[1]);  // Parent reads, so close write end
+    usleep(100000); // Wait for mpg123 to start
 
     // Wait for mpg123's startup message
     char buffer[256];
@@ -145,5 +149,23 @@ void stop_mp3() {
 void set_volume(int volume) {
     if (audio_pid > 0) {
         dprintf(control_pipe[1], "VOLUME %d\n", volume);
+    }
+}
+
+void check_mpg123_messages() {
+    char buffer[256];
+    
+    // Non-blocking read so it doesn't hang if there's no message
+    ssize_t bytes_read;
+    while ((bytes_read = read(status_pipe[0], buffer, sizeof(buffer) - 1)) > 0) {
+        if (prt_debug){
+            buffer[bytes_read] = '\0'; // Null-terminate the string
+            prtxy(1, 30, "[mpg123] %s", buffer); // Print the message
+        }
+    }
+
+    // Check for errors in read (other than "no data available")
+    if (bytes_read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        perror("Error reading from mpg123");
     }
 }

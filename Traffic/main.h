@@ -8,17 +8,29 @@
 #define TILE_VERT   0    // Vertical road
 #define TILE_HORI   1    // Horizontal road
 #define TILE_CROS   2    // Crossroad
-#define TILE_LIGHT  3    // Traffic light
-#define TILE_ORIG   4    // Origin
-#define TILE_DEST   5    // Destination
+#define TILE_TUNN   3    // Tunnel
+#define TILE_LIGHT  4    // Traffic light
+#define TILE_ORIG   5    // Origin
+#define TILE_DEST   6    // Destination
+
+#define TILE_TUNNEL_S 40
+#define TILE_TUNNEL_E 41
+#define TILE_TUNNEL_N 42
+#define TILE_TUNNEL_W 43
 
 #define MAP_TILE_EMPTY 0
 #define MAP_TILE_VERT  TILE_VERT + 1
 #define MAP_TILE_HORI  TILE_HORI + 1
 #define MAP_TILE_CROS  TILE_CROS + 1
-#define MAP_TILE_LIGHT TILE_LIGHT + 1
+#define MAP_TILE_TUNN  TILE_TUNN + 1
+#define MAP_TILE_LIGHT TILE_LIGHT+ 1
 #define MAP_TILE_ORIG  TILE_ORIG + 1
 #define MAP_TILE_DEST  TILE_DEST + 1
+
+#define MAP_TILE_TUNNEL_S TILE_TUNNEL_S + 1
+#define MAP_TILE_TUNNEL_E TILE_TUNNEL_E + 1
+#define MAP_TILE_TUNNEL_N TILE_TUNNEL_N + 1
+#define MAP_TILE_TUNNEL_W TILE_TUNNEL_W + 1
 
 #include "config.h"
 #include "includes.h"
@@ -103,6 +115,10 @@ typedef struct s_ui {
     char    info_prev_type;
     bool    show_help;
     bool    alt_fonts;
+    bool    update_mouse_tile;
+    int     tunnel_rotation;
+    bool    placing_tunnel;
+    int     current_tunnel_index;
 } t_ui;
 
 typedef struct s_path {
@@ -123,6 +139,7 @@ typedef struct s_tile_paths {
 typedef struct s_map_tile {
     char        type;
     char        action;
+    int         tunnel_id;
     t_light     light;
     t_tile_paths *paths;
 } t_map_tile;
@@ -168,6 +185,15 @@ typedef struct s_reccord {
     bool    alt_fonts;
 }   t_reccord;
 
+typedef struct s_tunnel {
+    bool    enabled;
+    int     id;
+    int     x[2];
+    int     y[2];
+    int     rot[2];
+    int     length;
+}   t_tunnel;
+
 typedef struct s_main {
     struct termios original;
     pid_t       audio_pid;
@@ -203,7 +229,10 @@ typedef struct s_main {
     t_map_tile  mapt[MAX_H][MAX_W];
     t_screen_map smap[S_MAP_H][S_MAP_W];    // To store cars positions / reservations
     t_light_list *lights;
-    
+
+    t_tunnel    tunnels[MAX_TUNNELS];
+    int         nb_tunnels;
+
     int         nb_origs;
     int         nb_dests;
     t_elem      origs[MAX_ORIGS];
@@ -260,15 +289,15 @@ void clear_screen();
 void get_terminal_size(int *w, int *h);
 
 // ui.c
+bool is_tunnel(int type);
 void map_add_tile(t_main *main, int x, int y, int type);
-void update_dest_infos(t_main *main, t_elem *dest);
+void update_dest_infos(t_elem *dest);
 void update_crossroads(t_main *main, int x, int y);
 void ui_manage_mouse(t_main *main);
 void draw_ui(t_main *main);
 void mapToMousePos(int x, int y, int *mx, int *my);
 void mousePosToMap(int mx, int my, int *x, int *y);
 void update_ui(t_main *main);
-void ui_draw_new_tile(t_main *main, int x, int y);
 void print_game_over(t_main *main);
 void print_help(t_main *main);
 
@@ -285,6 +314,13 @@ void switch_game_to_normal(t_main *main);
 void switch_game_to_sandbox(t_main *main);
 void update_high_scores(t_main *main);
 
+// tunnels.c
+bool is_tunnel(int type);
+int remove_tunnel(t_main *main, int x, int y);
+void convert_tunnel_pos_to_car_pos(int tunnel_x, int tunnel_y, char tunnel_dir, int *x, int *y);
+void get_tunnel_exit_pos(t_tunnel *tunnel, int x_in, int y_in, int *x_out, int *y_out);
+void get_tunnel_linked_tile(t_tunnel *tunnel, int x, int y, int *x_out, int *y_out);
+
 // utils.c
 char **split(const char *str, char delim);
 uint64_t millis();
@@ -298,6 +334,7 @@ void play_mp3();
 void stop_mp3();
 void kill_audio_process();
 void set_volume(int volume);
+void check_mpg123_messages();
 
 // files.c
 int read_reccord_file(t_main *main);
@@ -326,6 +363,9 @@ void path_add_to_list(t_tile_paths **list, t_path *path);
 void path_add_to_map(t_main *main, t_path *path);
 int  path_count_in_list(t_tile_paths *top);
 void path_add_to_map(t_main *main, t_path *path);
+
+bool remove_origin(t_main *main, int x, int y);
+bool remove_dest(t_main *main, int x, int y);
 
 void add_car_to_path(t_path *path, t_cars *car);
 void rm_car_from_path(t_path *path, t_cars *car);

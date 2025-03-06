@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
     
     if (music_en){
         init_mpg123(&main);
+        usleep(500000);
         set_volume(main.volume);
         if (main.music) play_mp3();
     }
@@ -162,12 +163,20 @@ int main(int argc, char *argv[]) {
 
     static bool scores_updated = false;
 
+    uint64_t last_mpg123_check = millis();
+
     // MAIN LOOP
     while (running) {
+
+        if (main.audio_player_started && last_mpg123_check + 1000 < millis()){
+            check_mpg123_messages();
+            last_mpg123_check = millis();
+        }
 
         t_start = millis();
         int ret = read_input(&main);
 
+        // GAME OVER SCREEN
         if (main.game_over) {
             if (!scores_updated){
                 update_high_scores(&main);

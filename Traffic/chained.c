@@ -192,7 +192,9 @@ bool cancel_all_path_on_tile(t_main *main, int x, int y) {
     
     // If the tile is in use, we can't remove it, mark it for removal
     if (tile_in_use(main, x, y)){
-        add_tile_to_be_removed(main, x, y);
+        if (main->mapt[y][x].action != 'r'){
+            add_tile_to_be_removed(main, x, y);
+        }
         return false;
     }
 
@@ -307,6 +309,48 @@ int path_count_in_list(t_tile_paths *top) {
 }
 
 /* *********** PATHS *********** */
+
+
+
+
+
+bool remove_origin(t_main *main, int x, int y){
+    bool can_remove = false;
+
+    t_elem *orig = elem_get_by_pos(main->origs, x, y);
+    if (orig && orig->active){
+        can_remove = cancel_all_path_on_tile(main, x, y);
+        if (can_remove){
+            elem_remove_by_index(main->origs, orig->index);
+            main->origs[orig->index].active = 0;
+            main->nb_origs -= 1;
+        }
+    }
+
+    return can_remove;
+}
+
+bool remove_dest(t_main *main, int x, int y){
+    bool can_remove = false;
+
+    t_elem *dest = elem_get_by_pos(main->dests, x, y);
+    if (dest && dest->active){
+        can_remove = cancel_all_path_on_tile(main, x, y);
+        if (can_remove){
+            elem_remove_by_index(main->dests, dest->index);
+            main->dests[dest->index].active = 0;
+            main->nb_dests--;
+        }
+    }
+
+    return can_remove;
+}
+
+
+
+
+
+
 
 /* *********** CARS *********** */
 

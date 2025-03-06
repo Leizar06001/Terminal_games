@@ -396,6 +396,7 @@ int check_crossroad(t_main *main, t_cars *car, int tile_x, int tile_y, t_pos *ti
 }
 
 int move_car(t_main *main, t_cars *car){
+    // stop_cars();
     int can_move = 0;
     char dir = car->dir;
     t_path *path = &main->paths[car->origin][car->dest][car->path_index];
@@ -427,46 +428,78 @@ int move_car(t_main *main, t_cars *car){
             break;
     }
 
-    // On check si on a changé de tile, ou si on change de direction (crossroad)
-    switch (dir){
-        case 'E': case 'W':
-            if (tile == 1){ // Horizontal
-                if (car->new_x == car->next_tile_x){
-                    changed_tile = true;
-                }
-                can_move = 1;
-            } else if (tile == 2){  // Crossroad
-                if (car->new_x == car->next_tile_x){    // Car must change direction, must go up or down now
-                    if (car->new_y == car->next_tile_y){
-                        changed_tile = true;
-                    } else if (car->new_y < car->next_tile_y){
-                        car_new_dir = 'S';
-                    } else {
-                        car_new_dir = 'N';
-                    }
-                }
-                can_move = 1;
-            }
-            break;
-        case 'N': case 'S':
-            if (tile == 0){ // Vertical
-                if (car->new_y == car->next_tile_y){
-                    changed_tile = true;
-                }
-                can_move = 1;
-            } else if (tile == 2){  // Crossroad
-                if (car->new_y == car->next_tile_y){    // Car must change direction, must go left or right now
+    // On check si on est dans un tunnel
+    // t_pos next_tile_pos = (car->travel_dir == 1) ? path->steps[car->index_in_path + 1] : path->steps[car->index_in_path - 1];
+    // int next_tile = main->mapt[next_tile_pos.y][next_tile_pos.x].type - 1;
+    stop_cars();
+    if (is_tunnel(tile) && is_tunnel(car->next_tile)){
+        
+        
+        int tunnel_id = main->mapt[tile_pos.y][tile_pos.x].tunnel_id;
+        get_tunnel_exit_pos(&main->tunnels[tunnel_id], tile_pos.x, tile_pos.y, &car->new_x, &car->new_y);
+        // if (ckeck_tunnel_exit_free(main, car, path) == 0) return 0;
+        changed_tile = true;
+        can_move = 1;
+        switch (car->next_tile){
+            case TILE_TUNNEL_S:
+                car_new_dir = 'S';
+                break;
+            case TILE_TUNNEL_N:
+                car_new_dir = 'N';
+                break;
+            case TILE_TUNNEL_E:
+                car_new_dir = 'E';
+                break;
+            case TILE_TUNNEL_W:
+                car_new_dir = 'W';
+                break;
+        }
+        
+        // On check si on a changé de tile, ou si on change de direction (crossroad)
+    // Les autres cas
+    // next_tile_x,y servent a savoir quand la voiture doit tourner pour atteindre la prochaine tile
+    // et aussi pour savoir si on a changé de tile
+    } else {
+        switch (dir){
+            case 'E': case 'W':
+                if (tile == TILE_HORI || is_tunnel(tile)){ // Horizontal
                     if (car->new_x == car->next_tile_x){
                         changed_tile = true;
-                    } else if (car->new_x < car->next_tile_x){
-                        car_new_dir = 'E';
-                    } else {
-                        car_new_dir = 'W';
                     }
+                    can_move = 1;
+                } else if (tile == TILE_CROS){  // Crossroad
+                    if (car->new_x == car->next_tile_x){    // Car must change direction, must go up or down now
+                        if (car->new_y == car->next_tile_y){
+                            changed_tile = true;
+                        } else if (car->new_y < car->next_tile_y){
+                            car_new_dir = 'S';
+                        } else {
+                            car_new_dir = 'N';
+                        }
+                    }
+                    can_move = 1;
                 }
-                can_move = 1;
-            }
-            break;
+                break;
+            case 'N': case 'S':
+                if (tile == TILE_VERT || is_tunnel(tile)){ // Vertical
+                    if (car->new_y == car->next_tile_y){
+                        changed_tile = true;
+                    }
+                    can_move = 1;
+                } else if (tile == TILE_CROS){  // Crossroad
+                    if (car->new_y == car->next_tile_y){    // Car must change direction, must go left or right now
+                        if (car->new_x == car->next_tile_x){
+                            changed_tile = true;
+                        } else if (car->new_x < car->next_tile_x){
+                            car_new_dir = 'E';
+                        } else {
+                            car_new_dir = 'W';
+                        }
+                    }
+                    can_move = 1;
+                }
+                break;
+        }
     }
 
     // On check si on peut avancer
@@ -501,7 +534,7 @@ int move_car(t_main *main, t_cars *car){
                 car->state = CAR_AT_DEST;
                 path->dest->nb_cars_in++;
                 // prt_nb_cars_dest(main, car->dest);
-                update_dest_infos(main, &main->dests[car->dest]);
+                update_dest_infos(&main->dests[car->dest]);
                 main->player.cash += CASH_PER_CAR;
                 main->player.score += SCORE_PER_CAR;
                 can_move = 0;
@@ -513,10 +546,10 @@ int move_car(t_main *main, t_cars *car){
                 car->next_tile_dir = get_next_dir(&path->steps[car->index_in_path], &path->steps[car->index_in_path - 1]);
                 car_update_tile(main, car);
                 get_next_tile_entrance_coord(main, car);
+
             } else {
                 // Update origin cooldown
                 t_elem *car_orig = &main->origs[car->origin];
-                stop_cars();
                 for(int i = 0; i < NB_CARS_PER_ORIG; i++){
                     if (car_orig->cars_cooldown[i] == -1){
                         car_orig->cars_cooldown[i] = ORIG_CAR_COOLDOWN;
@@ -538,35 +571,19 @@ int move_car(t_main *main, t_cars *car){
 void draw_car(t_main *main, t_cars *car){
     char *unicode = 0;
     if (car->can_move){
-        if (car->travel_dir == 1){
-            if (car->dir == 'N'){
-                unicode = main->cars_charset[1][0];
-                // unicode = "⮝";
-            } else if (car->dir == 'S'){
-                unicode = main->cars_charset[1][1];
-                // unicode = "⮟";
-            } else if (car->dir == 'E'){
-                unicode = main->cars_charset[1][2];
-                // unicode = "⮞";
-            } else if (car->dir == 'W'){
-                unicode = main->cars_charset[1][3];
-                // unicode = "⮜";
-            }
-        } else {
-            if (car->dir == 'N'){
-                unicode = main->cars_charset[2][0];
-                // unicode = "⮙";
-            } else if (car->dir == 'S'){
-                unicode = main->cars_charset[2][1];
-                // unicode = "⮛";
-            } else if (car->dir == 'E'){
-                unicode = main->cars_charset[2][2];
-                // unicode = "⮚";
-            } else if (car->dir == 'W'){
-                unicode = main->cars_charset[2][3];
-                // unicode = "⮘";
-            }
+        int index = 1;
+        if (car->travel_dir == -1) index = 2;
+
+        if (car->dir == 'N'){
+            unicode = main->cars_charset[index][0];
+        } else if (car->dir == 'S'){
+            unicode = main->cars_charset[index][1];
+        } else if (car->dir == 'E'){
+            unicode = main->cars_charset[index][2];
+        } else if (car->dir == 'W'){
+            unicode = main->cars_charset[index][3];
         }
+
     } else {
         if (car->dir == 'N'){
             unicode = "△";
@@ -599,7 +616,7 @@ void update_cars(t_main *main){
                     
                     if (place_return_car(main, c)){
                         // prt_nb_cars_dest(main, car->dest);
-                        update_dest_infos(main, &main->dests[car->dest]);
+                        update_dest_infos(&main->dests[car->dest]);
                     }
                 }
             }

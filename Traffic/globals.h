@@ -4,7 +4,7 @@
 #define NB_COLORS   15
 #define NB_DEST_COLORS 6
 
-#define NB_TILES    6
+#define NB_TILES    7
 
 extern bool running;
 extern const uint16_t speeds[NB_SPEEDS];

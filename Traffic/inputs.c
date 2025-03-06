@@ -173,7 +173,7 @@ int read_input(t_main *main) {
                     case 'd':
                         prt_debug = (prt_debug) ? false : true;
                         break;
-                    case 'r':
+                    case 'x':
                         reset_game(main);
                         break;
                     case 27:    // ESC -> exit
@@ -195,6 +195,11 @@ int read_input(t_main *main) {
                         main->ui.show_help = (main->ui.show_help) ? false : true;
                         main->paused = (main->ui.show_help) ? true : false;
                         print_help(main);
+                        break;
+                    case 'r':
+                        main->ui.tunnel_rotation++;
+                        if (main->ui.tunnel_rotation > 3) main->ui.tunnel_rotation = 0;
+                        main->ui.update_mouse_tile = true;
                         break;
                 }
 
