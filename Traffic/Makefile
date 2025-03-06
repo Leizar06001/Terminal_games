@@ -19,7 +19,8 @@ SRCS = 	main.c 		\
 		lights.c	\
 		game_logic.c	\
 		music.c		\
-		files.c
+		files.c		\
+		tunnels.c
 		# debug.c
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
