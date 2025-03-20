@@ -110,21 +110,21 @@ const char *tile_tunnel[4][5] = {
 };
 
 int tiles_color[NB_TILES] = {
-    C_B_CYAN,
-    C_B_CYAN,
-    C_B_BLUE,
-    C_B_BLUE,
-    C_B_CYAN,
-    C_B_CYAN,
-    C_B_CYAN,
+    C_B_CYAN,   // Vertical
+    C_B_CYAN,   // Horizontal
+    C_B_BLUE,   // Crossroad
+    C_B_BLUE,   // Tunnels
+    C_B_CYAN,   // Traffic light
+    C_B_CYAN,   // Origins
+    C_B_CYAN,   // Destinations
 };
 
 const int tiles_price[NB_TILES] = {
-    CASH_PER_ROAD,
-    CASH_PER_ROAD,
-    CASH_PER_CROSS,
-    CASH_PER_TUNNEL,
-    CASH_PER_ROAD,
+    CASH_PER_VERT,      // Vertical
+    CASH_PER_HORI,      // Horizontal
+    CASH_PER_CROSS,     // Crossroad
+    CASH_PER_TUNNEL,    // Tunnels
+    CASH_PER_CROSS,     // Traffic light
     0,
     0,
 };
@@ -219,6 +219,20 @@ void ui_draw_menu_tile(int ind, const char *color){
     draw_one_tile(1, Y_TOP + y, ind, color, 0, 0);
 }
 
+void refund_player(t_main *main, int type){
+    if (main->game_mode == 1){
+        if (type == TILE_VERT){
+            main->player.cash += CASH_PER_VERT;
+        } else if (type == TILE_HORI){
+            main->player.cash += CASH_PER_HORI;
+        } else if (type == TILE_CROS){
+            main->player.cash += CASH_PER_CROSS;
+        } else if (is_tunnel(type)){
+            main->player.cash += CASH_PER_TUNNEL;
+        }
+    }
+}
+
 void cancel_placing_tunnel(t_main *main){
     if (main->ui.placing_tunnel){
         int id = main->ui.current_tunnel_index;
@@ -227,6 +241,7 @@ void cancel_placing_tunnel(t_main *main){
         main->mapt[y][x].type = 0;
         draw_tile_map(main, x, y);
         main->ui.placing_tunnel = false;
+        refund_player(main, TILE_TUNNEL_W);
     }
 }
 
@@ -517,18 +532,6 @@ void update_crossroads(t_main *main, int x, int y){
     if (main->mapt[y + 1][x].type - 1          == TILE_CROS) draw_tile_map(main, x,     y + 1);
     if (x > 0 && main->mapt[y][x - 1].type - 1 == TILE_CROS) draw_tile_map(main, x - 1, y);
     if (main->mapt[y][x + 1].type - 1          == TILE_CROS) draw_tile_map(main, x + 1, y);
-}
-
-void refund_player(t_main *main, int type){
-    if (main->game_mode == 1){
-        if (type == TILE_HORI || type == TILE_VERT){
-            main->player.cash += CASH_PER_ROAD;
-        } else if (type == TILE_CROS){
-            main->player.cash += CASH_PER_CROSS;
-        } else if (is_tunnel(type)){
-            main->player.cash += CASH_PER_TUNNEL;
-        }
-    }
 }
 
 int remove_tile(t_main *main, int x, int y){
@@ -913,7 +916,7 @@ void update_ui(t_main *main) {
     
     prtxy(center + 35, 1, "%s+ / - : %sMusic volume (%s%d%s)  ",B_YELLOW, YELLOW, B_GREEN, main->volume, YELLOW);
     prtxy(center + 35, 2, "%s  M   : %sMusic (%s%s%s)  ",       B_YELLOW, YELLOW, (main->music) ? B_GREEN : B_RED, (main->music) ? "ON" : "OFF", YELLOW);
-    prtxy(center + 35, 3, "%s  F   : %sChange Font",            B_YELLOW, YELLOW);
+    prtxy(center + 35, 3, "%s  F   : %sChange Font (%s%s%s)",   B_YELLOW, YELLOW, B_GREEN, (main->ui.alt_fonts ? "Alt" : "Reg"), YELLOW);
     prtxy(center + 35, 4, "%s  H   : %sShow/Hide Help",         B_YELLOW, YELLOW);
 
     if (main->game_mode == 0){
@@ -1158,7 +1161,7 @@ void print_help(t_main *main){
         draw_one_tile(x + 70, y + 6,    TILE_CROS, colors[tiles_color[TILE_CROS]], 0, 0);
 
         printf("%s", YELLOW);
-        prtxy(x + 10, y + 11, "Those are %sregular roads%s | Cost %s%d%s $", B_YELLOW, YELLOW, B_YELLOW, CASH_PER_ROAD, YELLOW);
+        prtxy(x + 10, y + 11, "Those are %sregular roads%s | Cost %s%d%s $", B_YELLOW, YELLOW, B_YELLOW, CASH_PER_VERT, YELLOW);
         prtxy(x + 4, y + 12, "They can be placed horizontally or vertically");
 
         prtxy(x + 57, y + 11, "This is a %scrossroad%s | Cost %s%d%s $", B_YELLOW, YELLOW, B_YELLOW, CASH_PER_CROSS, YELLOW);

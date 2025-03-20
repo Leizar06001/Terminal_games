@@ -98,5 +98,4 @@ void select_charset(t_main *main) {
     } else {
         main->cars_charset = cars_charset;
     }
-    main->ui.alt_fonts = !main->ui.alt_fonts;
 }

@@ -132,10 +132,8 @@ void play_mp3(){
         if (access("Berlin_Retro.mp3", F_OK) == 0) {
             // Send LOAD command to start playback
             dprintf(control_pipe[1], "LOAD Berlin_Retro.mp3\n");
-            dprintf(control_pipe[1], "LOOP\n");
         } else if (access("Traffic/Berlin_Retro.mp3", F_OK) == 0) {
             dprintf(control_pipe[1], "LOAD Traffic/Berlin_Retro.mp3\n");
-            dprintf(control_pipe[1], "LOOP\n");
         }
     }
 }
@@ -161,6 +159,12 @@ void check_mpg123_messages() {
         if (prt_debug){
             buffer[bytes_read] = '\0'; // Null-terminate the string
             prtxy(1, 30, "[mpg123] %s", buffer); // Print the message
+        }
+
+        // Check for "EOF reached" message
+        if (strstr(buffer, "EOF") != NULL) {
+            // Restart the song
+            play_mp3();
         }
     }
 

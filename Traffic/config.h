@@ -12,9 +12,10 @@
 
 #define CASH_INITIAL    7000
 #define CASH_PER_CAR    1
-#define CASH_PER_ROAD   60
+#define CASH_PER_HORI   50
+#define CASH_PER_VERT   60
 #define CASH_PER_CROSS  80
-#define CASH_PER_TUNNEL 1800
+#define CASH_PER_TUNNEL 1500
 
 #define SCORE_PER_CAR   1
 
@@ -35,8 +36,8 @@
 
 
 // ****** GAME LOGIC ******
-#define DEST_DEFAULT_COOLDOWN   1000     // Frames
-#define DEST_DEFAULT_TIME       1000.0        // Frames
+#define DEST_DEFAULT_COOLDOWN   1500     // Frames
+#define DEST_DEFAULT_TIME       1200.0        // Frames
 #define DEST_NB_BARS            9
 #define DEST_NB_BARS_TIME       DEST_DEFAULT_TIME / DEST_NB_BARS
 #define DEST_EXTRA_TIME_PER_CAR 50

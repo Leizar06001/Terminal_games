@@ -177,8 +177,15 @@ int read_input(t_main *main) {
                         reset_game(main);
                         break;
                     case 27:    // ESC -> exit
-                        if (bytes_read == 1)
-                            running = false;
+                        if (bytes_read == 1){
+                            if (main->ui.show_help){
+                                main->ui.show_help = false;
+                                main->paused = false;
+                                print_help(main);
+                            } else {
+                                running = false;
+                            }
+                        }
                         break;
                     case 'm':
                         main->music = (main->music) ? false : true;
@@ -189,6 +196,7 @@ int read_input(t_main *main) {
                         }
                         break;
                     case 'f':
+                        main->ui.alt_fonts = !main->ui.alt_fonts;
                         select_charset(main);
                         break;
                     case 'h':

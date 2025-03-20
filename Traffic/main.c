@@ -96,6 +96,9 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "-m") == 0){
             music_en = false;
         }
+        if (strcmp(argv[i], "-d") == 0){
+            prt_debug = true;
+        }
     }
     
     // print_infos = false;

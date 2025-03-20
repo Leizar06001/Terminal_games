@@ -389,6 +389,7 @@ void switch_game_to_normal(t_main *main){
     disable_new_cars = true;
     tiles_en[TILE_ORIG] = 0;
     tiles_en[TILE_DEST] = 0;
+    tiles_en[TILE_LIGHT] = 0;
     reset_game(main);
 }
 
@@ -397,5 +398,6 @@ void switch_game_to_sandbox(t_main *main){
     disable_new_cars = false;
     tiles_en[TILE_ORIG] = 1;
     tiles_en[TILE_DEST] = 1;
+    tiles_en[TILE_LIGHT] = 1;
     reset_game(main);
 }

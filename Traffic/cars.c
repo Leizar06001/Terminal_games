@@ -552,7 +552,8 @@ int move_car(t_main *main, t_cars *car){
                 t_elem *car_orig = &main->origs[car->origin];
                 for(int i = 0; i < NB_CARS_PER_ORIG; i++){
                     if (car_orig->cars_cooldown[i] == -1){
-                        car_orig->cars_cooldown[i] = ORIG_CAR_COOLDOWN;
+                        int cooldown = ORIG_CAR_COOLDOWN - (path->length * 2);
+                        car_orig->cars_cooldown[i] = (cooldown > 0) ? cooldown : 0;
                         break;
                     }
                 }
